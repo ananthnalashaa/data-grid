@@ -22,15 +22,17 @@ export interface ColumnConfig {
   allowResizing?:    boolean;
   allowGrouping?:    boolean;
   displayAsCheckBox?: boolean;
+  isPrimaryKey?:     boolean;
   customAttributes?: { class?: string; style?: Record<string, string> };
-  template?:         (rowData: any, value?: any, field?: string) => HTMLElement | string;
-  headerTemplate?:   () => HTMLElement | string;
+  template?:         (rowData: any, value?: any, field?: string) => HTMLElement | string | any;
+  headerTemplate?:   () => HTMLElement | string | any;
   cellText?:         (rowData: any) => string;
 }
 
 export interface SelectionSettings {
   type?:              'Single' | 'Multiple';
   checkboxOnly?:      boolean;
+  checkboxMode?:      'Default' | 'ResetOnRowClick';
   persistSelection?:  boolean;
   mode?:              'Row' | 'Cell';
 }
