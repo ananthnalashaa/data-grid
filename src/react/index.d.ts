@@ -123,6 +123,7 @@ export interface GridComponentProps {
   rowSelected?:       (args: { data: any; rowIndex: number }) => void;
   rowDeselected?:     (args: { data: any; rowIndex: number }) => void;
   rowSelecting?:      (args: { data: any; rowIndex: number; cancel?: boolean }) => void;
+  onSelectionChange?: (args: { selectedRows: any[]; selectedRowIndexes: number[] }) => void;
   rowDataBound?:      (args: { row: HTMLTableRowElement; data: any }) => void;
   dataBound?:         () => void;
   recordDoubleClick?: (args: { rowData: any; rowIndex: number }) => void;
