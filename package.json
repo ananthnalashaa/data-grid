@@ -1,0 +1,47 @@
+{
+  "name": "data-grid",
+  "version": "1.0.0",
+  "description": "Zero-dependency, framework-agnostic data grid component — Syncfusion drop-in replacement",
+  "main": "dist/data-grid.js",
+  "module": "dist/data-grid.esm.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types":   "./dist/index.d.ts",
+      "import":  "./dist/data-grid.esm.js",
+      "require": "./dist/data-grid.js"
+    },
+    "./react": {
+      "types":   "./dist/react/index.d.ts",
+      "import":  "./dist/react/index.esm.js",
+      "require": "./dist/react/index.js"
+    },
+    "./css": {
+      "types":   "./dist/css.d.ts",
+      "default": "./dist/data-grid.css"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "node scripts/dev-server.js"
+  },
+  "keywords": [
+    "grid",
+    "table",
+    "datagrid",
+    "syncfusion",
+    "vanilla-js",
+    "no-dependency"
+  ],
+  "license": "MIT",
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "react-dom": ">=17.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.1"
+  }
+}

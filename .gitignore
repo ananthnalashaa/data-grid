@@ -1,0 +1,13 @@
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+
+# Internal planning docs
+*.md
+!README.md
+
+# GitHub Actions (not needed yet)
+.github/
+
+# dist/ is intentionally committed so GitHub installs work without a build step

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DataGrid — Dev Test</title>
+  <link rel="stylesheet" href="src/universal-grid.css" />
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 24px; background: #f0f2f5; }
+    h1 { font-size: 1.25rem; margin-bottom: 16px; color: #333; }
+  </style>
+</head>
+<body>
+
+<div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap">
+  <button id="btn-local"  style="padding:6px 14px;border:1px solid #ccc;border-radius:3px;cursor:pointer">Local array</button>
+  <button id="btn-remote" style="padding:6px 14px;border:1px solid #ccc;border-radius:3px;cursor:pointer">Remote (simulated)</button>
+  <button id="btn-ss"     style="padding:6px 14px;border:1px solid #1565c0;border-radius:3px;cursor:pointer;background:#1565c0;color:#fff">Server-side paging+sort</button>
+  <button id="btn-change" style="padding:6px 14px;border:1px solid #ccc;border-radius:3px;cursor:pointer">changeDataSource</button>
+  <button id="btn-vertical" style="padding:6px 14px;border:1px solid #28a745;border-radius:3px;cursor:pointer;background:#28a745;color:#fff">Vertical (Adaptive)</button>
+  <button id="btn-horizontal" style="padding:6px 14px;border:1px solid #ccc;border-radius:3px;cursor:pointer">Horizontal (reset)</button>
+  <button id="btn-group2" style="padding:6px 14px;border:1px solid #6f42c1;border-radius:3px;cursor:pointer;background:#6f42c1;color:#fff">Group: category + status</button>
+  <button id="btn-ungroup" style="padding:6px 14px;border:1px solid #ccc;border-radius:3px;cursor:pointer">Clear grouping</button>
+</div>
+
+<div id="grid-container"></div>
+
+<script type="module">
+  import {
+    UniversalGrid,
+    Sort, Page, Selection, Freeze,
+    Resize, Reorder, Group, DetailRow, ContextMenu, ExcelExport, Keyboard,
+  } from './index.js';
+
+  // Sample data
+  const data = [];
+  const categories = ['Electronics', 'Furniture', 'Software', 'Services'];
+  const statuses   = ['Active', 'Pending', 'In Review', 'Cancelled'];
+  for (let i = 1; i <= 80; i++) {
+    data.push({
+      id:       i,
+      orderId:  'ORD-' + String(1000 + i),
+      // Use different divisors so category and status are independent
+      status:   statuses[i % 4],
+      category: categories[Math.floor((i - 1) / 5) % 4],
+      date:     '2026-0' + ((i % 9) + 1) + '-' + String(10 + (i % 20)),
+      amount:   Math.round(Math.random() * 15000 * 100) / 100,
+      desc:     'Item description for order ' + i,
+    });
+  }
+
+  const grid = new UniversalGrid(document.getElementById('grid-container'), {
+    modules: [Sort, Page, Selection, Freeze, Resize, Reorder, Group, DetailRow, ContextMenu, ExcelExport, Keyboard],
+    dataSource: data,
+    primaryKey: 'id',
+    columns: [
+      { type: 'checkbox', width: 50 },
+      { field: 'orderId',  headerText: 'Order ID',    width: 130, isFrozen: true },
+      { field: 'status',   headerText: 'Status',      width: 110 },
+      { field: 'date',     headerText: 'Order Date',  width: 120},
+      { field: 'amount',   headerText: 'Amount',      width: 120, textAlign: 'Right' },
+      { field: 'category', headerText: 'Category',    width: 140 },
+      { field: 'desc',     headerText: 'Description', width: 250 },
+      {
+        field: 'action',
+        headerText: 'Actions',
+        width: 120,
+        textAlign: 'Center',
+        template: (row) => {
+          const wrap = document.createElement('div');
+          wrap.style.cssText = 'display:flex;gap:4px;justify-content:center';
+          const edit = document.createElement('button');
+          edit.textContent = 'Edit';
+          edit.style.cssText = 'padding:2px 8px;border:1px solid #ccc;border-radius:3px;background:#fff;cursor:pointer;font-size:12px';
+          wrap.appendChild(edit);
+          return wrap;
+        },
+      },
+    ],
+    allowSorting:    true,
+    allowPaging:     true,
+    allowResizing:   true,
+    allowReordering: true,
+    allowGrouping:   true,
+    allowSelection:  true,
+    selectionSettings: { type: 'Multiple', checkboxOnly: false },
+    pageSettings:    { pageSize: 25, pageSizes: true, pageCount: 5 },
+    height:          420,
+    contextMenuItems: [
+      { text: 'Edit Record', id: 'edit' },
+      { text: 'Copy Row',    id: 'copy' },
+      'separator',
+      { text: 'Delete',      id: 'delete' },
+    ],
+    detailTemplate: (row) => {
+      const div = document.createElement('div');
+      div.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px';
+      ['orderId','status','date','amount','category'].forEach(f => {
+        const field = document.createElement('div');
+        field.innerHTML = '<div style="font-size:10px;text-transform:uppercase;color:#999;font-weight:700">' + f + '</div>'
+          + '<div style="font-size:13px">' + (row[f] != null ? row[f] : '') + '</div>';
+        div.appendChild(field);
+      });
+      return div;
+    },
+
+    // Event handlers
+    rowSelected:    (args) => console.log('rowSelected', args),
+    rowDeselected:  (args) => console.log('rowDeselected', args),
+    rowDataBound:   (args) => {
+      if (args.data.status === 'Cancelled') {
+        args.row.style.opacity = '0.55';
+      }
+    },
+    actionComplete: (args) => {
+      console.log('actionComplete', args);
+      if (args.requestType === 'grouping') {
+        grid.groupCollapseAll();
+      }
+    },
+    contextMenuClick: (args) => console.log('contextMenuClick', args),
+    recordDoubleClick: (args) => console.log('dblclick', args),
+  });
+
+  // Expose for console testing
+  window.grid = grid;
+
+  /* ── Data binding demo buttons ─────────────────────────────────────────── */
+
+  // 1. Local array (default — already loaded above)
+  document.getElementById('btn-local').addEventListener('click', () => {
+    grid.changeDataSource(data);
+  });
+
+  // 2. Remote function — simulates a 600ms network delay, returns all data client-side
+  document.getElementById('btn-remote').addEventListener('click', () => {
+    grid.changeDataSource(async (query) => {
+      await new Promise(r => setTimeout(r, 600)); // simulate latency
+      // Return plain array → grid does client-side sort + page
+      return data;
+    });
+  });
+
+  // 3. Server-side — function returns { result, count } so grid skips client ops
+  document.getElementById('btn-ss').addEventListener('click', () => {
+    grid.changeDataSource(async (query) => {
+      await new Promise(r => setTimeout(r, 400));
+      // Simulate server-side sort
+      let sorted = data.slice();
+      if (query.sortField) {
+        sorted.sort((a, b) => {
+          const av = a[query.sortField] != null ? a[query.sortField] : '';
+          const bv = b[query.sortField] != null ? b[query.sortField] : '';
+          const cmp = String(av).localeCompare(String(bv), undefined, { numeric: true });
+          return query.sortDir === 'Descending' ? -cmp : cmp;
+        });
+      }
+      // Simulate server-side paging
+      const page = sorted.slice(query.skip, query.skip + query.take);
+      return { result: page, count: sorted.length };
+    });
+  });
+
+  // 4. changeDataSource — swap both data and columns at once
+  document.getElementById('btn-change').addEventListener('click', () => {
+    const newData = data.slice(0, 10).map(r => ({ ...r, orderId: 'NEW-' + r.id }));
+    const newCols = [
+      { field: 'orderId',  headerText: 'New Order ID', width: 160, isFrozen: true },
+      { field: 'status',   headerText: 'Status',       width: 120 },
+      { field: 'amount',   headerText: 'Amount',       width: 120, textAlign: 'Right' },
+    ];
+    grid.changeDataSource(newData, newCols);
+  });  // 5. Adaptive vertical mode
+  document.getElementById('btn-vertical').addEventListener('click', () => {
+    grid._opts.enableAdaptiveUI  = true;
+    grid._opts.rowRenderingMode  = 'Vertical';
+    grid._opts.adaptiveUIMode    = 'Both'; // active on all screen sizes
+    grid._isAdaptive = true;
+    grid._isVertical = true;
+    grid.render();
+  });
+
+  document.getElementById('btn-horizontal').addEventListener('click', () => {
+    grid._opts.enableAdaptiveUI = false;
+    grid._isAdaptive = false;
+    grid._isVertical = false;
+    grid.render();
+  });
+
+  // 6. Multi-level grouping: category → status
+  document.getElementById('btn-group2').addEventListener('click', () => {
+    grid.clearGrouping();
+    grid.groupColumn('category');
+    grid.groupColumn('status');
+  });
+
+  document.getElementById('btn-ungroup').addEventListener('click', () => {
+    grid.clearGrouping();
+  });
+</script>
+
+</body>
+</html>
