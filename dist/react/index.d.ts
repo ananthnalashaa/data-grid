@@ -97,6 +97,10 @@ export interface GridComponentProps {
   sortSettings?:      SortSettings;
   groupSettings?:     GroupSettings;
 
+  // Frozen columns
+  frozenColumns?: number;
+  frozenRows?:    number;
+
   // Dimensions
   height?: string | number;
   width?:  string | number;
