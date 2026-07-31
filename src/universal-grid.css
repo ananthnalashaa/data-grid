@@ -156,8 +156,8 @@
   opacity: 0.7;
 }
 .ug-group-chip-sort:hover { opacity: 1; }
-.ug-group-chip-sort-asc::after  { content: '\u25B2'; }
-.ug-group-chip-sort-desc::after { content: '\u25BC'; }
+.ug-group-chip-sort-asc::after  { content: '▲'; }
+.ug-group-chip-sort-desc::after { content: '▼'; }
 
 /* ─── Viewport ───────────────────────────────────────────────────────────── */
 
