@@ -138,7 +138,7 @@ const SelectionModule = {
       if (grid._selectedKeys.has(grid.getRowKey(data, i))) selected++;
     });
     grid._headerCheckbox.checked = records.length > 0 && selected === records.length;
-    grid._headerCheckbox.indeterminate = selected > 0 && selected < records.length;
+    grid._headerCheckbox.indeterminate = false;
   },
 
   methods: {

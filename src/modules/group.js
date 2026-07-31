@@ -19,6 +19,7 @@ const GroupModule = {
     grid._groupFields       = [];
     grid._collapsedGroups   = new Set();
     grid._allGroupKeys      = []; // populated by buildRenderItems; used by collapseAll
+    grid._groupSortDirs     = new Map();
 
     // Apply initial groups from groupSettings
     const gs = grid._opts.groupSettings || {};
@@ -123,9 +124,14 @@ const GroupModule = {
       buckets.get(k).push(item);
     });
 
+    const dir = grid._groupSortDirs.get(field) || 'asc';
+    const sortedKeys = Array.from(buckets.keys()).sort((a, b) =>
+      dir === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
+    );
+
     const result = [];
-    buckets.forEach((rowItems, key) => {
-      // Unique key includes depth prefix so nested groups don't clash
+    sortedKeys.forEach(key => {
+      const rowItems = buckets.get(key);
       const groupKey = depth + ':' + key;
       grid._allGroupKeys.push(groupKey);
 
@@ -141,9 +147,8 @@ const GroupModule = {
         ),
       });
 
+      const sub = GroupModule._groupLevel(grid, rowItems, depth + 1);
       if (!grid._collapsedGroups.has(groupKey)) {
-        // Recurse into sub-groups
-        const sub = GroupModule._groupLevel(grid, rowItems, depth + 1);
         result.push(...sub);
       }
     });
@@ -162,18 +167,18 @@ const GroupModule = {
 
     const tr = el('tr', { className: 'ug-row-group' });
 
-    if (hasCheck) {
+    if (false && hasCheck) {
       const checkTd = el('td', { className: 'ug-frozen', style: { left: '0px' } });
       checkTd.appendChild(el('div', { className: 'ug-cell-check' },
         [el('input', { type: 'checkbox' })]));
       tr.appendChild(checkTd);
     }
 
-    const span = totalCols - (hasCheck ? 1 : 0);
+    const span = totalCols;
     const td = el('td', { colSpan: String(span) });
 
     // Indent nested levels
-    if (depth > 0) td.style.paddingLeft = (depth * 24 + 12) + 'px';
+    td.style.setProperty('padding-left', (depth * 24 + 12) + 'px', 'important');
 
     const arrow  = el('span', { className: 'ug-group-arrow' + (isOpen ? ' open' : '') });
     const hdrCol = cols.find(c => c.field === field);
@@ -182,10 +187,7 @@ const GroupModule = {
 
     const toggle = el('span', { className: 'ug-group-toggle' }, [
       arrow,
-      document.createTextNode(label + ': '),
-      el('strong', {}, [String(val)]),
-      document.createTextNode('\u00a0'),
-      el('span', { className: 'muted' }, ['(' + rowItems.length + ')']),
+      document.createTextNode(label + ': ' + String(val) + ' - ' + rowItems.length + (rowItems.length === 1 ? ' item' : ' items')),
     ]);
 
     toggle.addEventListener('click', () => {
@@ -206,14 +208,25 @@ const GroupModule = {
 
     if (grid._groupFields.length === 0) {
       grid._groupPanel.appendChild(
-        el('span', {}, ['Drag a column header here to group by that column'])
+        el('span', {}, ['Drag a column header here to group its column'])
       );
     } else {
       grid._groupFields.forEach(f => {
         const col  = grid._orderedCols().find(c => c.field === f);
+        const dir  = grid._groupSortDirs.get(f) || 'asc';
         const chip = el('span', { className: 'ug-group-chip' }, [(col && col.headerText) || f]);
-        const x    = el('span', { className: 'ug-group-chip-x', title: 'Remove group' }, ['\u00d7']);
+        const sortBtn = el('span', {
+          className: 'ug-group-chip-sort ' + (dir === 'asc' ? 'ug-group-chip-sort-asc' : 'ug-group-chip-sort-desc'),
+          title: dir === 'asc' ? 'Sorted Ascending' : 'Sorted Descending',
+        });
+        sortBtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          grid._groupSortDirs.set(f, dir === 'asc' ? 'desc' : 'asc');
+          grid.render();
+        });
+        const x = el('span', { className: 'ug-group-chip-x', title: 'Remove group' }, ['\u00d7']);
         x.addEventListener('click', () => GroupModule._removeField(grid, f));
+        chip.appendChild(sortBtn);
         chip.appendChild(x);
         grid._groupPanel.appendChild(chip);
       });
@@ -228,6 +241,9 @@ const GroupModule = {
     grid._collapsedGroups.clear();
     grid.emit('actionBegin', { requestType: 'grouping', columnName: field });
     grid._emitDataState('grouping');
+    grid.render();
+    // Auto-collapse all groups after initial render populates _allGroupKeys
+    grid._allGroupKeys.forEach(k => grid._collapsedGroups.add(k));
     grid.render();
     grid.emit('actionComplete', { requestType: 'grouping', columnName: field });
   },

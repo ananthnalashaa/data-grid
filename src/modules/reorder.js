@@ -20,11 +20,12 @@ const ReorderModule = {
     // Entire header is draggable — no grip indicator needed
     th.setAttribute('draggable', 'true');
     th.addEventListener('dragstart', () => { grid._dragColIdx = colIndex; });
-    th.addEventListener('dragover', e => { e.preventDefault(); th.style.outline = '2px solid var(--ug-color-primary)'; });
-    th.addEventListener('dragleave', () => { th.style.outline = ''; });
+    th.addEventListener('dragover', e => { e.preventDefault(); th.style.outline = '1px solid #007bff'; th.style.outlineOffset = '-1px'; });
+    th.addEventListener('dragleave', () => { th.style.outline = ''; th.style.outlineOffset = ''; });
     th.addEventListener('drop', e => {
       e.preventDefault();
       th.style.outline = '';
+      th.style.outlineOffset = '';
       ReorderModule._drop(grid, colIndex);
     });
   },

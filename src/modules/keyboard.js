@@ -44,11 +44,24 @@ const KeyboardModule = {
     vp.addEventListener('mousedown', () => {
       if (document.activeElement !== vp) vp.focus({ preventScroll: true });
     });
+
+    // Clear active highlight when clicking outside the grid
+    grid._docClickHandler = (e) => {
+      if (grid._container && !grid._container.contains(e.target)) {
+        grid._activeRowIdx = -1;
+        grid._activeColIdx = 0;
+        KeyboardModule._applyActiveHighlight(grid);
+      }
+    };
+    document.addEventListener('mousedown', grid._docClickHandler);
   },
 
   destroy(grid) {
     if (grid._kbHandler) {
       grid._viewport?.removeEventListener('keydown', grid._kbHandler);
+    }
+    if (grid._docClickHandler) {
+      document.removeEventListener('mousedown', grid._docClickHandler);
     }
   },
 

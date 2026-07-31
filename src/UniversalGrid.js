@@ -650,7 +650,7 @@ class UniversalGrid {
           if (typeof tpl === 'string') textEl.innerHTML = tpl;
           else if (tpl instanceof HTMLElement) textEl.appendChild(tpl);
         } else {
-          textEl.textContent = col.headerText || col.field || '';
+          textEl.textContent = col.headerText != null ? col.headerText : (col.field || '');
         }
         inner.appendChild(textEl);
       }
@@ -762,9 +762,28 @@ class UniversalGrid {
           const box = el('div', { className: 'ug-cell-check' });
           const cb  = el('input', { type: 'checkbox' });
           cb.checked = checked;
-          cb.disabled = true;
+          cb.setAttribute('readonly', '');
+          cb.style.pointerEvents = 'none';
           box.appendChild(cb);
           td.appendChild(box);
+        } else if (col.commands && col.commands.length > 0) {
+          const cmdWrap = el('div', { className: 'ug-command-buttons' });
+          col.commands.forEach(cmd => {
+            const btn = el('span', {
+              className: 'ug-command-btn ' + (cmd.iconCss || ''),
+              title: cmd.title || '',
+            });
+            btn.dataset.commandId = cmd.id || '';
+            btn.dataset.rowIndex = String(rowIndex);
+            btn.addEventListener('click', (ev) => {
+              ev.stopPropagation();
+              if (this._opts.onCommandClick) {
+                this._opts.onCommandClick(cmd.id, rowData, rowIndex);
+              }
+            });
+            cmdWrap.appendChild(btn);
+          });
+          td.appendChild(cmdWrap);
         } else if (col.template) {
           // Syncfusion template signature: template(rowData, cellValue, fieldName)
           const cellVal = rowData[col.field];

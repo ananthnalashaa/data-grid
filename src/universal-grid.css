@@ -84,9 +84,10 @@
   /* Box model */
   display: flex;
   flex-direction: column;
+  height: 100%;
 
   /* Visual */
-  background: var(--ug-color-bg);
+  background: inherit;
   border: 1px solid var(--ug-color-border);
   border-radius: var(--ug-radius-base);
   box-shadow: var(--ug-shadow-shell);
@@ -99,6 +100,7 @@
   /* Box model */
   display: flex;
   align-items: center;
+  justify-content: center;
   flex-wrap: wrap;
   gap: var(--ug-spacing-md);
   min-height: 34px;
@@ -146,11 +148,23 @@
 
 .ug-group-chip-x:hover { opacity: 1; }
 
+.ug-group-chip-sort {
+  display: inline-block;
+  cursor: pointer;
+  margin-left: 4px;
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+.ug-group-chip-sort:hover { opacity: 1; }
+.ug-group-chip-sort-asc::after  { content: '\u25B2'; }
+.ug-group-chip-sort-desc::after { content: '\u25BC'; }
+
 /* ─── Viewport ───────────────────────────────────────────────────────────── */
 
 .ug-viewport {
   position: relative;
   flex: 1;
+  min-height: 0;
   overflow-x: auto;
   overflow-y: auto;
 }
@@ -276,6 +290,11 @@
 
 /* ─── Body rows ──────────────────────────────────────────────────────────── */
 
+/* Default row background - allows getRowStyle to override */
+.ug-table tbody tr {
+  background: var(--ug-color-bg);
+}
+
 .ug-table td {
   /* Typography */
   font-size: var(--ug-font-size-base);
@@ -287,7 +306,7 @@
   padding: var(--ug-spacing-lg) var(--ug-spacing-lg);
 
   /* Visual */
-  background: var(--ug-color-bg);
+  background: inherit;
   border-bottom: 1px solid var(--ug-color-border-cell);
   border-right: 1px solid var(--ug-color-border-light);
 }
@@ -324,8 +343,8 @@
 }
 
 /* enableHover:false — disable row hover highlight */
-.ug-no-hover .ug-table tbody tr:hover td     { background: var(--ug-color-bg); }
-.ug-no-hover .ug-table tbody tr:hover .ug-frozen { background: var(--ug-color-bg); }
+.ug-no-hover .ug-table tbody tr:hover td     { background: inherit; }
+.ug-no-hover .ug-table tbody tr:hover .ug-frozen { background: inherit; }
 
 /* allowTextWrap — cell text wraps to multiple lines */
 .ug-text-wrap .ug-table td {
@@ -348,7 +367,7 @@
 .ug-frozen {
   position: sticky;
   z-index: 2;
-  background: var(--ug-color-bg);
+  background: inherit;
 }
 
 thead .ug-frozen {
@@ -364,7 +383,7 @@ thead .ug-frozen {
 
 /* Explicit backgrounds prevent scroll-through bleed */
 .ug-table tbody tr .ug-frozen {
-  background: var(--ug-color-bg);
+  background: inherit;
 }
 .ug-table tbody tr:hover .ug-frozen {
   background: var(--ug-color-bg-hover);
@@ -453,7 +472,7 @@ thead .ug-frozen {
   color: #666;
 
   /* Visual */
-  background: var(--ug-color-bg);
+  background: inherit;
   border: 1px solid #bbb;
   border-radius: var(--ug-radius-sm);
   cursor: pointer;
@@ -502,6 +521,8 @@ thead .ug-frozen {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 20px;
+  min-height: 20px;
 }
 
 /* When ug-cell-check sits inside a th-inner, let it expand so the
@@ -511,10 +532,29 @@ thead .ug-frozen {
 }
 
 .ug-cell-check input[type="checkbox"] {
-  width: 14px;
-  height: 14px;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
   cursor: pointer;
   accent-color: var(--ug-color-primary);
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+  visibility: visible !important;
+}
+
+/* Body row checkboxes - transparent wrapper background */
+td .ug-cell-check {
+  background-color: transparent !important;
+}
+
+td .ug-cell-check input[type="checkbox"] {
+  position: relative !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
 }
 
 .ug-text-right  { text-align: right; }
@@ -548,7 +588,7 @@ thead .ug-frozen {
 .ug-pager-sizes select {
   padding: 3px var(--ug-spacing-md);
   font-size: var(--ug-font-size-base);
-  background: var(--ug-color-bg);
+  background: inherit;
   border: 1px solid #c8c8c8;
   border-radius: var(--ug-radius-sm);
 }
@@ -575,7 +615,7 @@ thead .ug-frozen {
   color: #444;
 
   /* Visual */
-  background: var(--ug-color-bg);
+  background: inherit;
   border: 1px solid #d0d0d0;
   border-radius: var(--ug-radius-sm);
   cursor: pointer;
@@ -613,7 +653,7 @@ thead .ug-frozen {
   padding: var(--ug-spacing-xs) 0;
 
   /* Visual */
-  background: var(--ug-color-bg);
+  background: inherit;
   border: 1px solid #d0d0d0;
   border-radius: var(--ug-radius-base);
   box-shadow: var(--ug-shadow-menu);
