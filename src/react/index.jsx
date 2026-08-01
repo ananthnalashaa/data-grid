@@ -16,7 +16,8 @@ import React, {
   useEffect, useRef, useImperativeHandle,
   forwardRef, useMemo, Children,
 } from 'react';
-import { createRoot, flushSync } from 'react-dom/client';
+import { createRoot } from 'react-dom/client';
+import { flushSync } from 'react-dom';
 
 import { UniversalGrid } from '../UniversalGrid.js';
 import {
