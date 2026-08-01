@@ -16,7 +16,7 @@ import React, {
   useEffect, useRef, useImperativeHandle,
   forwardRef, useMemo, Children,
 } from 'react';
-import { createRoot } from 'react-dom/client';
+import { createRoot, flushSync } from 'react-dom/client';
 
 import { UniversalGrid } from '../UniversalGrid.js';
 import {
@@ -69,7 +69,7 @@ function wrapReactFn(fn, rootsRef) {
     container.style.cssText = 'display:contents';
     const root = createRoot(container);
     rootsRef.current.push(root);
-    root.render(fn(...args));
+    flushSync(() => { root.render(fn(...args)); });
     return container;
   };
 }
