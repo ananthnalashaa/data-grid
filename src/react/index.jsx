@@ -80,8 +80,12 @@ function wrapReactFn(fn, rootsRef) {
 }
 
 function unmountRoots(rootsRef) {
-  rootsRef.current.forEach(r => { try { r.unmount(); } catch (_) {} });
+  const old = rootsRef.current;
   rootsRef.current = [];
+  // Defer unmount to avoid "synchronously unmount while rendering" warning.
+  setTimeout(() => {
+    old.forEach(r => { try { r.unmount(); } catch (_) {} });
+  }, 0);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
