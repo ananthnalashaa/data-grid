@@ -707,11 +707,11 @@ class UniversalGrid {
       return;
     }
 
+    const fragment = document.createDocumentFragment();
+
     items.forEach(item => {
       if (item.type === 'group') {
-        // Group row rendering is handled entirely by the group module
-        // via a custom element it appends directly
-        if (item._render) item._render(this._tbody);
+        if (item._render) item._render(fragment);
         return;
       }
 
@@ -827,14 +827,16 @@ class UniversalGrid {
         tr.appendChild(td);
       });
 
-      this._tbody.appendChild(tr);
+      fragment.appendChild(tr);
 
       // Emit rowDataBound
       this.emit('rowDataBound', { row: tr, data: rowData });
 
       // Let modules add rows after this one (detail row)
-      this._callHook('afterBodyRow', tr, rowData, rowIndex, this._tbody);
+      this._callHook('afterBodyRow', tr, rowData, rowIndex, fragment);
     });
+
+    this._tbody.appendChild(fragment);
   }
   /* ─── Vertical (card) row rendering ──────────────────────────────────────── */
 

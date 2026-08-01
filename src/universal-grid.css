@@ -311,7 +311,6 @@
   border-right: 1px solid var(--ug-color-border-light);
 }
 
-.ug-table tbody tr:last-child td { border-bottom: none; }
 .ug-table tbody tr:hover td      { background: var(--ug-color-bg-hover); }
 
 /* ─── Keyboard navigation ───────────────────────────────────────────── */
