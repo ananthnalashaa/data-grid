@@ -13,10 +13,11 @@
  */
 
 import React, {
-  useEffect, useRef, useImperativeHandle,
+  useEffect, useRef, useImperativeHandle, useState, useCallback,
   forwardRef, useMemo, Children,
 } from 'react';
 import { createRoot } from 'react-dom/client';
+import { createPortal } from 'react-dom';
 
 import { UniversalGrid } from '../UniversalGrid.js';
 import {
@@ -58,46 +59,47 @@ export const ExcelExport = 'ExcelExport';
 export const Keyboard    = 'Keyboard';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TEMPLATE HELPERS
-   React template functions return ReactNode; our vanilla grid expects
-   HTMLElement | string.  wrapReactFn renders JSX into a DOM container.
+   TEMPLATE HELPERS — Portal-based single-root renderer
+   All template cells render in ONE React tree via portals so they paint
+   in a single pass instead of one-by-one via separate createRoot calls.
 ═══════════════════════════════════════════════════════════════════════════ */
 
-// Batch React template renders into a single microtask so all cells paint together.
-let pendingRenders = [];
-let batchScheduled = false;
+// Shared portal manager — one per GridComponent instance.
+function usePortalManager() {
+  const [portals, setPortals] = useState([]);
+  const nextId = useRef(0);
 
-function flushPendingRenders() {
-  const batch = pendingRenders;
-  pendingRenders = [];
-  batchScheduled = false;
-  batch.forEach(({ root, jsx }) => root.render(jsx));
+  const addPortal = useCallback((container, jsx) => {
+    const id = nextId.current++;
+    setPortals(prev => [...prev, { id, container, jsx }]);
+    return id;
+  }, []);
+
+  const clearPortals = useCallback(() => {
+    nextId.current = 0;
+    setPortals([]);
+  }, []);
+
+  const portalElements = useMemo(
+    () => portals.map(p => createPortal(p.jsx, p.container, String(p.id))),
+    [portals],
+  );
+
+  return { addPortal, clearPortals, portalElements };
 }
 
-function wrapReactFn(fn, rootsRef) {
+function wrapReactFn(fn, addPortal) {
   return (...args) => {
     const jsx = fn(...args);
     const container = document.createElement('div');
     container.style.cssText = 'display:contents';
-    const root = createRoot(container);
-    rootsRef.current.push(root);
-    pendingRenders.push({ root, jsx });
-    if (!batchScheduled) {
-      batchScheduled = true;
-      queueMicrotask(flushPendingRenders);
-    }
+    // Queue a portal — rendered in the single shared React tree.
+    addPortal(container, jsx);
     return container;
   };
 }
 
-function unmountRoots(rootsRef) {
-  const old = rootsRef.current;
-  rootsRef.current = [];
-  // Defer unmount to avoid "synchronously unmount while rendering" warning.
-  setTimeout(() => {
-    old.forEach(r => { try { r.unmount(); } catch (_) {} });
-  }, 0);
-}
+// No unmountRoots needed — portals are managed by React's tree.
 
 /* ═══════════════════════════════════════════════════════════════════════════
    GRID COMPONENT
@@ -106,7 +108,7 @@ function unmountRoots(rootsRef) {
 export const GridComponent = forwardRef(function GridComponent(props, ref) {
   const containerRef  = useRef(null);
   const gridRef       = useRef(null);
-  const templateRoots = useRef([]);
+  const { addPortal, clearPortals, portalElements } = usePortalManager();
 
   // ── Stable callback forwarding ──────────────────────────────────────
   // Store latest callbacks in a ref so the grid always calls the newest
@@ -140,14 +142,13 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
       .filter(c => c.type === ColumnDirective)
       .map(c => {
         const col = { ...c.props };
-        // React template functions → DOM element wrappers
         if (typeof col.template === 'function') {
           const orig = col.template;
-          col.template = wrapReactFn(orig, templateRoots);
+          col.template = wrapReactFn(orig, addPortal);
         }
         if (typeof col.headerTemplate === 'function') {
           const orig = col.headerTemplate;
-          col.headerTemplate = wrapReactFn(orig, templateRoots);
+          col.headerTemplate = wrapReactFn(orig, addPortal);
         }
         return col;
       });
@@ -162,7 +163,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     let detailTemplate = props.detailTemplate;
     if (typeof detailTemplate === 'function') {
       const orig = detailTemplate;
-      detailTemplate = row => wrapReactFn(orig, templateRoots)(row);
+      detailTemplate = row => wrapReactFn(orig, addPortal)(row);
     }
 
     return {
@@ -226,7 +227,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     if (!containerRef.current) return;
     gridRef.current = new UniversalGrid(containerRef.current, buildOpts());
     return () => {
-      unmountRoots(templateRoots);
+      clearPortals();
       gridRef.current?.destroy();
       gridRef.current = null;
     };
@@ -235,7 +236,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   // ── dataSource changes ───────────────────────────────────────────────
   useEffect(() => {
     if (!gridRef.current) return;
-    unmountRoots(templateRoots); // clean up old template React trees
+    clearPortals();
     gridRef.current.setDataSource(props.dataSource || []);
   }, [props.dataSource]);
 
@@ -244,7 +245,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   useEffect(() => {
     if (isFirstColRender.current) { isFirstColRender.current = false; return; }
     if (!gridRef.current) return;
-    unmountRoots(templateRoots);
+    clearPortals();
     gridRef.current.setColumns(columns);
   }, [columns]);
 
@@ -387,7 +388,10 @@ export function PagerComponent({
     });
   }, [totalRecordsCount, pageSize, currentPage]);
 
-  return <div ref={containerRef} />;
+  return (<>
+    <div ref={containerRef} />
+    {portalElements}
+  </>);
 }
 
 /* ─── helpers re-used by PagerComponent ────────────────────────────────── */
