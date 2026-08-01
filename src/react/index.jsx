@@ -63,13 +63,29 @@ export const Keyboard    = 'Keyboard';
    HTMLElement | string.  wrapReactFn renders JSX into a DOM container.
 ═══════════════════════════════════════════════════════════════════════════ */
 
+// Batch React template renders into a single microtask so all cells paint together.
+let pendingRenders = [];
+let batchScheduled = false;
+
+function flushPendingRenders() {
+  const batch = pendingRenders;
+  pendingRenders = [];
+  batchScheduled = false;
+  batch.forEach(({ root, jsx }) => root.render(jsx));
+}
+
 function wrapReactFn(fn, rootsRef) {
   return (...args) => {
+    const jsx = fn(...args);
     const container = document.createElement('div');
     container.style.cssText = 'display:contents';
     const root = createRoot(container);
     rootsRef.current.push(root);
-    root.render(fn(...args));
+    pendingRenders.push({ root, jsx });
+    if (!batchScheduled) {
+      batchScheduled = true;
+      queueMicrotask(flushPendingRenders);
+    }
     return container;
   };
 }
