@@ -17,7 +17,7 @@ import React, {
   forwardRef, useMemo, Children,
 } from 'react';
 import { createRoot } from 'react-dom/client';
-import { flushSync } from 'react-dom';
+import { renderToStaticMarkup } from 'react-dom/server';
 
 import { UniversalGrid } from '../UniversalGrid.js';
 import {
@@ -66,11 +66,15 @@ export const Keyboard    = 'Keyboard';
 
 function wrapReactFn(fn, rootsRef) {
   return (...args) => {
+    const jsx = fn(...args);
     const container = document.createElement('div');
     container.style.cssText = 'display:contents';
+    // Render synchronously as HTML string for instant paint.
+    container.innerHTML = renderToStaticMarkup(jsx);
+    // Hydrate with createRoot so event handlers (onClick etc.) work.
     const root = createRoot(container);
     rootsRef.current.push(root);
-    flushSync(() => { root.render(fn(...args)); });
+    root.render(jsx);
     return container;
   };
 }
