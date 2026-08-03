@@ -268,8 +268,10 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     gridRef.current._opts.contextMenuItems = props.contextMenuItems;
   }, [props.contextMenuItems]);
 
-  // ── frozenColumns changes ────────────────────────────────────────────
+  // ── frozenColumns changes (skip initial mount — already set in buildOpts) ──
+  const isFirstFrozenRender = useRef(true);
   useEffect(() => {
+    if (isFirstFrozenRender.current) { isFirstFrozenRender.current = false; return; }
     if (!gridRef.current) return;
     gridRef.current._opts.frozenColumns = props.frozenColumns;
     unmountRoots(templateRoots);
