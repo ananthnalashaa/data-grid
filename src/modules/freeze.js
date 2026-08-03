@@ -6,7 +6,10 @@ const FreezeModule = {
   name: 'Freeze',
 
   init(grid) {
-    // Toggle ug-scrolled on viewport when horizontally scrolled.
+    // _viewport not yet created at init time; use afterMount instead.
+  },
+
+  afterMount(grid) {
     const vp = grid._viewport;
     if (vp) {
       grid._freezeScrollHandler = () => {
