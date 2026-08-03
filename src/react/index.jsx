@@ -190,6 +190,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
       // Dimensions
       height:    props.height,
       width:     props.width,
+      frozenColumns: props.frozenColumns,
       className,
       style:     props.style,
       // Row styling (direct options)
@@ -257,6 +258,13 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     if (!gridRef.current) return;
     gridRef.current._opts.contextMenuItems = props.contextMenuItems;
   }, [props.contextMenuItems]);
+
+  // ── frozenColumns changes ────────────────────────────────────────────
+  useEffect(() => {
+    if (!gridRef.current) return;
+    gridRef.current._opts.frozenColumns = props.frozenColumns;
+    gridRef.current.render();
+  }, [props.frozenColumns]);
 
   // ── Imperative ref methods ───────────────────────────────────────────
   useImperativeHandle(ref, () => {
