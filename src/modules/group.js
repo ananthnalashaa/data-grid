@@ -177,19 +177,15 @@ const GroupModule = {
     const span = totalCols;
     const td = el('td', { colSpan: String(span) });
 
-    // Freeze the group row text if any columns are frozen.
-    const hasFrozen = cols.some((c, i) => {
+    // If frozen columns exist, wrap group content in a sticky div so it stays visible on h-scroll.
+    const hasFrozen = cols.some((c) => {
       if (c.isFrozen || c.lockColumn || c._frozenByCount) return true;
       if (c.freeze === 'Left' || c.freeze === 'Fixed') return true;
       return false;
     });
-    if (hasFrozen) {
-      td.classList.add('ug-frozen');
-      td.style.left = '0px';
-    }
 
     // Indent nested levels
-    td.style.setProperty('padding-left', (depth * 24 + 12) + 'px', 'important');
+    const paddingLeft = (depth * 24 + 12) + 'px';
 
     const arrow  = el('span', { className: 'ug-group-arrow' + (isOpen ? ' open' : '') });
     const hdrCol = cols.find(c => c.field === field);
@@ -208,7 +204,18 @@ const GroupModule = {
       grid.render();
     });
 
-    td.appendChild(toggle);
+    if (hasFrozen) {
+      td.style.padding = '0';
+      const stickyWrap = el('div', {
+        className: 'ug-group-sticky-wrap',
+        style: { position: 'sticky', left: '0', paddingLeft: paddingLeft, display: 'inline-block' },
+      });
+      stickyWrap.appendChild(toggle);
+      td.appendChild(stickyWrap);
+    } else {
+      td.style.setProperty('padding-left', paddingLeft, 'important');
+      td.appendChild(toggle);
+    }
     tr.appendChild(td);
     tbody.appendChild(tr);
   },
