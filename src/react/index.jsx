@@ -90,11 +90,14 @@ function usePortalManager() {
 
 function wrapReactFn(fn, addPortal) {
   return (...args) => {
-    const jsx = fn(...args);
+    const result = fn(...args);
+    // String or HTMLElement — the grid handles these natively (td.innerHTML / appendChild).
+    if (typeof result === 'string' || result instanceof HTMLElement) return result;
+    if (result == null) return '';
+    // React JSX — render via portal into a container div.
     const container = document.createElement('div');
     container.style.cssText = 'display:contents';
-    // Queue a portal — rendered in the single shared React tree.
-    addPortal(container, jsx);
+    addPortal(container, result);
     return container;
   };
 }
