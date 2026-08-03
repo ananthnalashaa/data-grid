@@ -244,22 +244,21 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── dataSource changes (skip first — buildOpts already has initial data) ──
-  const isFirstDataRender = useRef(true);
+  // ── dataSource changes (value-compare to survive StrictMode double-fire) ──
+  const prevDataSource = useRef(props.dataSource);
   useEffect(() => {
-    if (isFirstDataRender.current) { isFirstDataRender.current = false; return; }
     if (!gridRef.current) return;
+    if (props.dataSource === prevDataSource.current) return;
+    prevDataSource.current = props.dataSource;
     unmountRoots(templateRoots);
     gridRef.current.setDataSource(props.dataSource || []);
   }, [props.dataSource]);
 
-  // ── Column changes (only when structure actually changes) ────────────
-  const isFirstColRender = useRef(true);
+  // ── Column changes (fingerprint-compare) ────────────────────────────
   useEffect(() => {
-    if (isFirstColRender.current) { isFirstColRender.current = false; prevFingerprint.current = colFingerprint; return; }
+    if (!gridRef.current) return;
     if (colFingerprint === prevFingerprint.current) return;
     prevFingerprint.current = colFingerprint;
-    if (!gridRef.current) return;
     unmountRoots(templateRoots);
     gridRef.current.setColumns(columns);
   }, [columns, colFingerprint]);
@@ -270,11 +269,12 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     gridRef.current._opts.contextMenuItems = props.contextMenuItems;
   }, [props.contextMenuItems]);
 
-  // ── frozenColumns changes (skip initial mount — already set in buildOpts) ──
-  const isFirstFrozenRender = useRef(true);
+  // ── frozenColumns changes (value-compare to survive StrictMode double-fire) ──
+  const prevFrozenCols = useRef(props.frozenColumns);
   useEffect(() => {
-    if (isFirstFrozenRender.current) { isFirstFrozenRender.current = false; return; }
     if (!gridRef.current) return;
+    if (props.frozenColumns === prevFrozenCols.current) return;
+    prevFrozenCols.current = props.frozenColumns;
     gridRef.current._opts.frozenColumns = props.frozenColumns;
     unmountRoots(templateRoots);
     gridRef.current.render();
