@@ -147,7 +147,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     () => columns.map(c => `${c.field}|${c.headerText}|${c.width}|${c.type}|${c.isFrozen}|${!!c.template}|${!!c.displayAsCheckBox}`).join(','),
     [columns],
   );
-  const prevFingerprint = useRef('');
+  const prevFingerprint = useRef(colFingerprint);
 
   // ── Build options object ─────────────────────────────────────────────
   function buildOpts() {
