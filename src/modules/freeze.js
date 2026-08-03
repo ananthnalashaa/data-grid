@@ -6,7 +6,25 @@ const FreezeModule = {
   name: 'Freeze',
 
   init(grid) {
-    // _viewport not yet created at init time; use afterMount instead.
+    // When frozenColumns=N, stamp the first N columns by identity so grouping
+    // doesn't shift unfrozen columns into the frozen zone.
+    FreezeModule._stampFrozenColumns(grid);
+  },
+
+  _stampFrozenColumns(grid) {
+    const fc = parseInt(grid._opts.frozenColumns, 10);
+    if (isNaN(fc) || fc <= 0) return;
+    const cols = grid._opts.columns || [];
+    let count = 0;
+    cols.forEach(col => {
+      col._frozenByCount = false;
+    });
+    cols.forEach(col => {
+      if (count < fc && !col.isFrozen && !col.lockColumn) {
+        col._frozenByCount = true;
+        count++;
+      }
+    });
   },
 
   afterMount(grid) {
@@ -37,8 +55,7 @@ const FreezeModule = {
   _isFrozen(grid, col, colIndex) {
     if (col.isFrozen || col.lockColumn)          return true;
     if (col.freeze === 'Left' || col.freeze === 'Fixed') return true;
-    const fc = parseInt(grid._opts.frozenColumns, 10);
-    if (!isNaN(fc) && fc > 0 && colIndex < fc)  return true;
+    if (col._frozenByCount)                      return true;
     return false;
   },
   _computeOffsets(grid) {
