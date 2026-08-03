@@ -234,10 +234,21 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   }
 
   // ── Mount grid once (layoutEffect = before browser paint) ─────────
+  const mountedRef = useRef(false);
   useLayoutEffect(() => {
     if (!containerRef.current) return;
-    gridRef.current = new UniversalGrid(containerRef.current, buildOpts());
+    const opts = buildOpts();
+    // Suppress dataBound during mount to avoid a synchronous state update
+    // that triggers a parent re-render before the first paint.
+    const origDataBound = opts.dataBound;
+    opts.dataBound = () => {};
+    gridRef.current = new UniversalGrid(containerRef.current, opts);
+    gridRef.current._opts.dataBound = origDataBound;
+    mountedRef.current = true;
+    // Fire dataBound after the first paint so the parent can remove the skeleton.
+    requestAnimationFrame(() => origDataBound?.());
     return () => {
+      mountedRef.current = false;
       unmountRoots(templateRoots);
       gridRef.current?.destroy();
       gridRef.current = null;
