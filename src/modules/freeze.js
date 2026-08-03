@@ -59,7 +59,7 @@ const FreezeModule = {
     return false;
   },
   _computeOffsets(grid) {
-    const cols = grid._orderedCols();
+    const cols = grid._visibleCols ? grid._visibleCols() : grid._orderedCols();
     const offsets = new Array(cols.length).fill(-1);
     let cum = 0;
     let lastIdx = -1;

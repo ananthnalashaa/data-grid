@@ -177,6 +177,17 @@ const GroupModule = {
     const span = totalCols;
     const td = el('td', { colSpan: String(span) });
 
+    // Freeze the group row text if any columns are frozen.
+    const hasFrozen = cols.some((c, i) => {
+      if (c.isFrozen || c.lockColumn || c._frozenByCount) return true;
+      if (c.freeze === 'Left' || c.freeze === 'Fixed') return true;
+      return false;
+    });
+    if (hasFrozen) {
+      td.classList.add('ug-frozen');
+      td.style.left = '0px';
+    }
+
     // Indent nested levels
     td.style.setProperty('padding-left', (depth * 24 + 12) + 'px', 'important');
 
