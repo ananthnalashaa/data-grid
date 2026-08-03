@@ -17,6 +17,7 @@ import React, {
   forwardRef, useMemo, Children,
 } from 'react';
 import { createRoot } from 'react-dom/client';
+import { createPortal } from 'react-dom';
 
 import { UniversalGrid } from '../UniversalGrid.js';
 import {
