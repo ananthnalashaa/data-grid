@@ -13,11 +13,10 @@
  */
 
 import React, {
-  useEffect, useRef, useImperativeHandle, useState, useCallback,
+  useEffect, useRef, useImperativeHandle,
   forwardRef, useMemo, Children,
 } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createPortal } from 'react-dom';
 
 import { UniversalGrid } from '../UniversalGrid.js';
 import {
@@ -64,28 +63,29 @@ export const Keyboard    = 'Keyboard';
    in a single pass instead of one-by-one via separate createRoot calls.
 ═══════════════════════════════════════════════════════════════════════════ */
 
-// Shared portal manager — one per GridComponent instance.
+// Shared portal manager — ref-based for synchronous writes, single flush to render.
 function usePortalManager() {
-  const [portals, setPortals] = useState([]);
-  const nextId = useRef(0);
+  const portalsRef = useRef([]);
+  const [tick, setTick] = useState(0);
 
   const addPortal = useCallback((container, jsx) => {
-    const id = nextId.current++;
-    setPortals(prev => [...prev, { id, container, jsx }]);
-    return id;
+    portalsRef.current.push({ container, jsx });
   }, []);
 
   const clearPortals = useCallback(() => {
-    nextId.current = 0;
-    setPortals([]);
+    portalsRef.current = [];
   }, []);
 
+  // Call after all addPortal calls to trigger ONE re-render that paints all portals.
+  const flush = useCallback(() => setTick(n => n + 1), []);
+
   const portalElements = useMemo(
-    () => portals.map(p => createPortal(p.jsx, p.container, String(p.id))),
-    [portals],
+    () => portalsRef.current.map((p, i) => createPortal(p.jsx, p.container, String(i))),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tick],
   );
 
-  return { addPortal, clearPortals, portalElements };
+  return { addPortal, clearPortals, flush, portalElements };
 }
 
 function wrapReactFn(fn, addPortal) {
@@ -111,7 +111,7 @@ function wrapReactFn(fn, addPortal) {
 export const GridComponent = forwardRef(function GridComponent(props, ref) {
   const containerRef  = useRef(null);
   const gridRef       = useRef(null);
-  const { addPortal, clearPortals, portalElements } = usePortalManager();
+  const { addPortal, clearPortals, flush, portalElements } = usePortalManager();
 
   // ── Stable callback forwarding ──────────────────────────────────────
   // Store latest callbacks in a ref so the grid always calls the newest
@@ -230,6 +230,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   useEffect(() => {
     if (!containerRef.current) return;
     gridRef.current = new UniversalGrid(containerRef.current, buildOpts());
+    flush();
     return () => {
       clearPortals();
       gridRef.current?.destroy();
@@ -242,6 +243,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     if (!gridRef.current) return;
     clearPortals();
     gridRef.current.setDataSource(props.dataSource || []);
+    flush();
   }, [props.dataSource]);
 
   // ── Column changes (after initial mount) ────────────────────────────
@@ -251,6 +253,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     if (!gridRef.current) return;
     clearPortals();
     gridRef.current.setColumns(columns);
+    flush();
   }, [columns]);
 
   // ── contextMenuItems changes ─────────────────────────────────────────
@@ -263,7 +266,9 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   useEffect(() => {
     if (!gridRef.current) return;
     gridRef.current._opts.frozenColumns = props.frozenColumns;
+    clearPortals();
     gridRef.current.render();
+    flush();
   }, [props.frozenColumns]);
 
   // ── Imperative ref methods ───────────────────────────────────────────
