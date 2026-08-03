@@ -13,11 +13,10 @@
  */
 
 import React, {
-  useEffect, useRef, useImperativeHandle, useState, useCallback,
+  useEffect, useRef, useImperativeHandle,
   forwardRef, useMemo, Children,
 } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createPortal } from 'react-dom';
 
 import { UniversalGrid } from '../UniversalGrid.js';
 import {
@@ -59,48 +58,32 @@ export const ExcelExport = 'ExcelExport';
 export const Keyboard    = 'Keyboard';
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   TEMPLATE HELPERS — Portal-based single-root renderer
-   All template cells render in ONE React tree via portals so they paint
-   in a single pass instead of one-by-one via separate createRoot calls.
+   TEMPLATE HELPERS
+   React template functions return ReactNode; our vanilla grid expects
+   HTMLElement | string. String/HTMLElement results pass through natively;
+   JSX results get a per-cell createRoot (only used for action columns).
 ═══════════════════════════════════════════════════════════════════════════ */
 
-// Shared portal manager — ref-based for synchronous writes, single flush to render.
-function usePortalManager() {
-  const portalsRef = useRef([]);
-  const [tick, setTick] = useState(0);
-
-  const addPortal = useCallback((container, jsx) => {
-    portalsRef.current.push({ container, jsx });
-  }, []);
-
-  const clearPortals = useCallback(() => {
-    portalsRef.current = [];
-  }, []);
-
-  // Call after all addPortal calls to trigger ONE re-render that paints all portals.
-  const flush = useCallback(() => setTick(n => n + 1), []);
-
-  const portalElements = useMemo(
-    () => portalsRef.current.map((p, i) => createPortal(p.jsx, p.container, String(i))),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tick],
-  );
-
-  return { addPortal, clearPortals, flush, portalElements };
-}
-
-function wrapReactFn(fn, addPortal) {
+function wrapReactFn(fn, rootsRef) {
   return (...args) => {
     const result = fn(...args);
-    // String or HTMLElement — the grid handles these natively (td.innerHTML / appendChild).
     if (typeof result === 'string' || result instanceof HTMLElement) return result;
     if (result == null) return '';
-    // React JSX — render via portal into a container div.
     const container = document.createElement('div');
     container.style.cssText = 'display:contents';
-    addPortal(container, result);
+    const root = createRoot(container);
+    rootsRef.current.push(root);
+    root.render(result);
     return container;
   };
+}
+
+function unmountRoots(rootsRef) {
+  const old = rootsRef.current;
+  rootsRef.current = [];
+  setTimeout(() => {
+    old.forEach(r => { try { r.unmount(); } catch (_) {} });
+  }, 0);
 }
 
 // No unmountRoots needed — portals are managed by React's tree.
@@ -112,7 +95,7 @@ function wrapReactFn(fn, addPortal) {
 export const GridComponent = forwardRef(function GridComponent(props, ref) {
   const containerRef  = useRef(null);
   const gridRef       = useRef(null);
-  const { addPortal, clearPortals, flush, portalElements } = usePortalManager();
+  const templateRoots = useRef([]);
 
   // ── Stable callback forwarding ──────────────────────────────────────
   // Store latest callbacks in a ref so the grid always calls the newest
@@ -148,11 +131,11 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
         const col = { ...c.props };
         if (typeof col.template === 'function') {
           const orig = col.template;
-          col.template = wrapReactFn(orig, addPortal);
+          col.template = wrapReactFn(orig, templateRoots);
         }
         if (typeof col.headerTemplate === 'function') {
           const orig = col.headerTemplate;
-          col.headerTemplate = wrapReactFn(orig, addPortal);
+          col.headerTemplate = wrapReactFn(orig, templateRoots);
         }
         return col;
       });
@@ -167,7 +150,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     let detailTemplate = props.detailTemplate;
     if (typeof detailTemplate === 'function') {
       const orig = detailTemplate;
-      detailTemplate = row => wrapReactFn(orig, addPortal)(row);
+      detailTemplate = row => wrapReactFn(orig, templateRoots)(row);
     }
 
     return {
@@ -231,9 +214,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   useEffect(() => {
     if (!containerRef.current) return;
     gridRef.current = new UniversalGrid(containerRef.current, buildOpts());
-    flush();
     return () => {
-      clearPortals();
+      unmountRoots(templateRoots);
       gridRef.current?.destroy();
       gridRef.current = null;
     };
@@ -242,9 +224,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   // ── dataSource changes ───────────────────────────────────────────────
   useEffect(() => {
     if (!gridRef.current) return;
-    clearPortals();
+    unmountRoots(templateRoots);
     gridRef.current.setDataSource(props.dataSource || []);
-    flush();
   }, [props.dataSource]);
 
   // ── Column changes (after initial mount) ────────────────────────────
@@ -252,9 +233,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   useEffect(() => {
     if (isFirstColRender.current) { isFirstColRender.current = false; return; }
     if (!gridRef.current) return;
-    clearPortals();
+    unmountRoots(templateRoots);
     gridRef.current.setColumns(columns);
-    flush();
   }, [columns]);
 
   // ── contextMenuItems changes ─────────────────────────────────────────
@@ -267,9 +247,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   useEffect(() => {
     if (!gridRef.current) return;
     gridRef.current._opts.frozenColumns = props.frozenColumns;
-    clearPortals();
+    unmountRoots(templateRoots);
     gridRef.current.render();
-    flush();
   }, [props.frozenColumns]);
 
   // ── Imperative ref methods ───────────────────────────────────────────
@@ -405,10 +384,7 @@ export function PagerComponent({
     });
   }, [totalRecordsCount, pageSize, currentPage]);
 
-  return (<>
-    <div ref={containerRef} />
-    {portalElements}
-  </>);
+  return <div ref={containerRef} />;
 }
 
 /* ─── helpers re-used by PagerComponent ────────────────────────────────── */
