@@ -117,6 +117,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     onSortChange:      props.onSortChange,
     onPageChange:      props.onPageChange,
     onPageSizeChange:  props.onPageSizeChange,
+    onSelectionChange: props.onSelectionChange,
   };
 
   // ── Parse columns from JSX children ─────────────────────────────────
@@ -151,6 +152,15 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     if (typeof detailTemplate === 'function') {
       const orig = detailTemplate;
       detailTemplate = row => wrapReactFn(orig, templateRoots)(row);
+    }
+
+    function _fireSelectionChange() {
+      if (!cbRef.current.onSelectionChange || !gridRef.current) return;
+      const records = gridRef.current.getSelectedRecords?.() || [];
+      cbRef.current.onSelectionChange({
+        selectedRows: records,
+        selectedRowIndexes: [],
+      });
     }
 
     return {
@@ -196,8 +206,14 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
       onPageSizeChange:  (...a) => cbRef.current.onPageSizeChange?.(...a),
       contextMenuOpen:   (...a) => cbRef.current.contextMenuOpen?.(...a),
       // Stable callback forwarders (always call the latest version)
-      rowSelected:       (...a) => cbRef.current.rowSelected?.(...a),
-      rowDeselected:     (...a) => cbRef.current.rowDeselected?.(...a),
+      rowSelected:       (...a) => {
+        cbRef.current.rowSelected?.(...a);
+        _fireSelectionChange();
+      },
+      rowDeselected:     (...a) => {
+        cbRef.current.rowDeselected?.(...a);
+        _fireSelectionChange();
+      },
       rowSelecting:      (...a) => cbRef.current.rowSelecting?.(...a),
       rowDataBound:      (...a) => cbRef.current.rowDataBound?.(...a),
       dataBound:         (...a) => cbRef.current.dataBound?.(...a),
