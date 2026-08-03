@@ -244,8 +244,10 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── dataSource changes ───────────────────────────────────────────────
+  // ── dataSource changes (skip first — buildOpts already has initial data) ──
+  const isFirstDataRender = useRef(true);
   useEffect(() => {
+    if (isFirstDataRender.current) { isFirstDataRender.current = false; return; }
     if (!gridRef.current) return;
     unmountRoots(templateRoots);
     gridRef.current.setDataSource(props.dataSource || []);
