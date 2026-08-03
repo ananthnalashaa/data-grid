@@ -13,7 +13,7 @@
  */
 
 import React, {
-  useEffect, useRef, useImperativeHandle,
+  useEffect, useLayoutEffect, useRef, useImperativeHandle,
   forwardRef, useMemo, Children,
 } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -233,8 +233,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     };
   }
 
-  // ── Mount grid once ──────────────────────────────────────────────────
-  useEffect(() => {
+  // ── Mount grid once (layoutEffect = before browser paint) ─────────
+  useLayoutEffect(() => {
     if (!containerRef.current) return;
     gridRef.current = new UniversalGrid(containerRef.current, buildOpts());
     return () => {
