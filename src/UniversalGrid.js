@@ -633,6 +633,7 @@ class UniversalGrid {
     cols.forEach((col, i) => {
       const isCheck = col.type === 'checkbox';
       const th = el('th');
+      if (isCheck) th.classList.add('ug-checkbox-header');
 
       // Build inner container
       const alignCls = col.textAlign === 'Right' ? ' ug-th-right'
