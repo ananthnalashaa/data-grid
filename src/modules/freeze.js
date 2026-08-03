@@ -5,6 +5,23 @@
 const FreezeModule = {
   name: 'Freeze',
 
+  init(grid) {
+    // Toggle ug-scrolled on viewport when horizontally scrolled.
+    const vp = grid._viewport;
+    if (vp) {
+      grid._freezeScrollHandler = () => {
+        vp.classList.toggle('ug-scrolled', vp.scrollLeft > 0);
+      };
+      vp.addEventListener('scroll', grid._freezeScrollHandler, { passive: true });
+    }
+  },
+
+  destroy(grid) {
+    if (grid._viewport && grid._freezeScrollHandler) {
+      grid._viewport.removeEventListener('scroll', grid._freezeScrollHandler);
+    }
+  },
+
   // Compute cumulative left offsets from declared column widths.
   // table-layout: fixed ensures the browser respects these exact widths,
   // so declared width = rendered width — no DOM measurement needed.
