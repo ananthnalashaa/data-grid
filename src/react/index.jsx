@@ -142,6 +142,13 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
       });
   }, [props.children]);
 
+  // Fingerprint: only re-render columns when structure changes (not on every parent re-render).
+  const colFingerprint = useMemo(
+    () => columns.map(c => `${c.field}|${c.headerText}|${c.width}|${c.type}|${c.isFrozen}|${!!c.template}|${!!c.displayAsCheckBox}`).join(','),
+    [columns],
+  );
+  const prevFingerprint = useRef('');
+
   // ── Build options object ─────────────────────────────────────────────
   function buildOpts() {
     const className = [props.className, props.cssClass]
@@ -244,14 +251,16 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     gridRef.current.setDataSource(props.dataSource || []);
   }, [props.dataSource]);
 
-  // ── Column changes (after initial mount) ────────────────────────────
+  // ── Column changes (only when structure actually changes) ────────────
   const isFirstColRender = useRef(true);
   useEffect(() => {
-    if (isFirstColRender.current) { isFirstColRender.current = false; return; }
+    if (isFirstColRender.current) { isFirstColRender.current = false; prevFingerprint.current = colFingerprint; return; }
+    if (colFingerprint === prevFingerprint.current) return;
+    prevFingerprint.current = colFingerprint;
     if (!gridRef.current) return;
     unmountRoots(templateRoots);
     gridRef.current.setColumns(columns);
-  }, [columns]);
+  }, [columns, colFingerprint]);
 
   // ── contextMenuItems changes ─────────────────────────────────────────
   useEffect(() => {
