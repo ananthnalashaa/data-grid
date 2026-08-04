@@ -201,14 +201,7 @@ const GroupModule = {
       grid.render();
     });
 
-    if (hasFrozen) {
-      td.style.position = 'sticky';
-      td.style.left = '0';
-      td.style.zIndex = '2';
-      td.style.paddingLeft = paddingLeft;
-    } else {
-      td.style.setProperty('padding-left', paddingLeft, 'important');
-    }
+    td.style.setProperty('padding-left', paddingLeft, 'important');
     td.appendChild(toggle);
     tr.appendChild(td);
     tbody.appendChild(tr);
