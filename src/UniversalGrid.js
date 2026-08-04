@@ -730,6 +730,12 @@ class UniversalGrid {
       tr._ugIndex = rowIndex;
 
       // Row click / double-click
+      tr.addEventListener('click', (e) => {
+        const td = e.target.closest('td');
+        const colIdx = td ? Array.from(tr.children).indexOf(td) : -1;
+        const col = cols[colIdx] || {};
+        this.emit('recordClick', { rowData: rowData, rowIndex: rowIndex, column: { field: col.field } });
+      });
       tr.addEventListener('dblclick', () => {
         this.emit('recordDoubleClick', { rowData: rowData, rowIndex: rowIndex });
       });
