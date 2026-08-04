@@ -178,11 +178,8 @@ const GroupModule = {
     const td = el('td', { colSpan: String(span) });
 
     // If frozen columns exist, wrap group content in a sticky div so it stays visible on h-scroll.
-    const hasFrozen = cols.some((c) => {
-      if (c.isFrozen || c.lockColumn || c._frozenByCount) return true;
-      if (c.freeze === 'Left' || c.freeze === 'Fixed') return true;
-      return false;
-    });
+    const hasFrozen = !!(grid._frozenFieldSet && grid._frozenFieldSet.size > 0) ||
+      cols.some((c) => c.isFrozen || c.lockColumn || c.freeze === 'Left' || c.freeze === 'Fixed');
 
     // Indent nested levels
     const paddingLeft = (depth * 24 + 12) + 'px';
