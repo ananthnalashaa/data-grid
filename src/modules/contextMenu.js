@@ -57,7 +57,7 @@ const ContextMenuModule = {
     const items = openArgs.items || [];
 
     items.forEach(item => {
-      if (item === 'separator' || (item && item.type === 'separator')) {
+      if (item === 'separator' || (item && (item.type === 'separator' || item.separator === true))) {
         menu.appendChild(el('div', { className: 'ug-ctx-divider' }));
         return;
       }
