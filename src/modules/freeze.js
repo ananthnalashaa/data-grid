@@ -27,6 +27,13 @@ const FreezeModule = {
     if (vp) {
       grid._freezeScrollHandler = () => {
         vp.classList.toggle('ug-scrolled', vp.scrollLeft > 0);
+        // Keep group row toggles pinned to left edge on horizontal scroll.
+        const sl = vp.scrollLeft;
+        if (grid._groupToggles) {
+          grid._groupToggles.forEach(el => {
+            el.style.transform = sl > 0 ? `translateX(${sl}px)` : '';
+          });
+        }
       };
       vp.addEventListener('scroll', grid._freezeScrollHandler, { passive: true });
     }

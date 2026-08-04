@@ -80,6 +80,9 @@ const GroupModule = {
   },
 
   beforeRender(grid) {
+    // Clear group toggles from previous render.
+    grid._groupToggles = [];
+
     // ── Manage showGroupedColumn ─────────────────────────────────────────
     const gs = grid._opts.groupSettings || {};
     const showGroupedCol = gs.showGroupedColumn === true;
@@ -200,6 +203,14 @@ const GroupModule = {
         : grid._collapsedGroups.add(groupKey);
       grid.render();
     });
+
+    // If frozen columns exist, track this toggle for scroll-based positioning.
+    const hasFrozen = !!(grid._frozenFieldSet && grid._frozenFieldSet.size > 0) ||
+      cols.some((c) => c.isFrozen || c.lockColumn || c.freeze === 'Left' || c.freeze === 'Fixed');
+    if (hasFrozen) {
+      if (!grid._groupToggles) grid._groupToggles = [];
+      grid._groupToggles.push(toggle);
+    }
 
     td.style.setProperty('padding-left', paddingLeft, 'important');
     td.appendChild(toggle);
