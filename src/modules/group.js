@@ -202,23 +202,14 @@ const GroupModule = {
     });
 
     if (hasFrozen) {
-      td.style.padding = '0';
-      td.style.overflow = 'visible';
-      const stickyWrap = el('div', {
-        className: 'ug-group-sticky-wrap',
-        style: {
-          position: 'sticky',
-          left: '0',
-          paddingLeft: paddingLeft,
-          width: 'max-content',
-        },
-      });
-      stickyWrap.appendChild(toggle);
-      td.appendChild(stickyWrap);
+      td.style.position = 'sticky';
+      td.style.left = '0';
+      td.style.zIndex = '2';
+      td.style.paddingLeft = paddingLeft;
     } else {
       td.style.setProperty('padding-left', paddingLeft, 'important');
-      td.appendChild(toggle);
     }
+    td.appendChild(toggle);
     tr.appendChild(td);
     tbody.appendChild(tr);
   },
