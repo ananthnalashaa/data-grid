@@ -34,7 +34,7 @@ const SelectionModule = {
     const ss = grid._opts.selectionSettings || {};
     if (!ss.checkboxOnly) {
       tr.addEventListener('click', e => {
-        if (e.target.closest('.ug-expand-btn, .ug-cell-check input')) return;
+        if (e.target.closest('.ug-expand-btn, .ug-cell-check input, button, a')) return;
         SelectionModule._onRowClick(grid, data, rowIndex, e);
       });
     }
