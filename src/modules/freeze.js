@@ -6,36 +6,20 @@ const FreezeModule = {
   name: 'Freeze',
 
   init(grid) {
-    // When frozenColumns=N, stamp the first N columns by identity so grouping
-    // doesn't shift unfrozen columns into the frozen zone.
-    FreezeModule._stampFrozenColumns(grid);
-  },
-
-  _stampFrozenColumns(grid) {
+    // Track frozen columns by field name — immune to column object recreation.
     const fc = parseInt(grid._opts.frozenColumns, 10);
-    if (isNaN(fc) || fc <= 0) return;
-    // Stamp both _columns (used by render) and _opts.columns (source of truth).
-    const allCols = [
-      ...(grid._columns || []),
-      ...(grid._opts.columns || []),
-    ];
-    allCols.forEach(col => { col._frozenByCount = false; });
-    let count = 0;
-    // Stamp _columns (the ones actually used during render).
-    (grid._columns || []).forEach(col => {
-      if (count < fc && !col.isFrozen && !col.lockColumn) {
-        col._frozenByCount = true;
-        count++;
+    if (!isNaN(fc) && fc > 0) {
+      grid._frozenFieldSet = new Set();
+      const cols = grid._columns || grid._opts.columns || [];
+      let count = 0;
+      for (const col of cols) {
+        if (count >= fc) break;
+        if (!col.isFrozen && !col.lockColumn) {
+          grid._frozenFieldSet.add(col.field || String(col._idx));
+          count++;
+        }
       }
-    });
-    // Mirror stamps to _opts.columns for consistency.
-    count = 0;
-    (grid._opts.columns || []).forEach(col => {
-      if (count < fc && !col.isFrozen && !col.lockColumn) {
-        col._frozenByCount = true;
-        count++;
-      }
-    });
+    }
   },
 
   afterMount(grid) {
@@ -66,7 +50,7 @@ const FreezeModule = {
   _isFrozen(grid, col, colIndex) {
     if (col.isFrozen || col.lockColumn)          return true;
     if (col.freeze === 'Left' || col.freeze === 'Fixed') return true;
-    if (col._frozenByCount)                      return true;
+    if (grid._frozenFieldSet && grid._frozenFieldSet.has(col.field || String(col._idx))) return true;
     return false;
   },
   _computeOffsets(grid) {
