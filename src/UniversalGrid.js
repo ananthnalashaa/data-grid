@@ -403,6 +403,9 @@ class UniversalGrid {
     this._columns = (cols || []).map((c, i) => Object.assign({ _idx: i }, c));
     this._colWidths = {};
     this._colOrder = null;
+    // Re-stamp frozen columns on the new _columns array.
+    const freezeMod = this._modules.find(m => m.name === 'Freeze');
+    if (freezeMod && freezeMod._stampFrozenColumns) freezeMod._stampFrozenColumns(this);
     this.render();
   }
 

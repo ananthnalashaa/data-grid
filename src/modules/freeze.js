@@ -14,12 +14,23 @@ const FreezeModule = {
   _stampFrozenColumns(grid) {
     const fc = parseInt(grid._opts.frozenColumns, 10);
     if (isNaN(fc) || fc <= 0) return;
-    const cols = grid._opts.columns || [];
+    // Stamp both _columns (used by render) and _opts.columns (source of truth).
+    const allCols = [
+      ...(grid._columns || []),
+      ...(grid._opts.columns || []),
+    ];
+    allCols.forEach(col => { col._frozenByCount = false; });
     let count = 0;
-    cols.forEach(col => {
-      col._frozenByCount = false;
+    // Stamp _columns (the ones actually used during render).
+    (grid._columns || []).forEach(col => {
+      if (count < fc && !col.isFrozen && !col.lockColumn) {
+        col._frozenByCount = true;
+        count++;
+      }
     });
-    cols.forEach(col => {
+    // Mirror stamps to _opts.columns for consistency.
+    count = 0;
+    (grid._opts.columns || []).forEach(col => {
       if (count < fc && !col.isFrozen && !col.lockColumn) {
         col._frozenByCount = true;
         count++;
