@@ -1,0 +1,787 @@
+/* ==========================================================================
+   universal-grid.css
+   Styles for the UniversalGrid component.
+
+   Naming convention:
+     `ug-` namespace prefix (avoids collisions with consumer stylesheets).
+     Elements follow `ug-{block}-{element}` and modifiers `ug-{block}--{modifier}`.
+
+   All color, spacing, and typography values are defined as CSS custom
+   properties so consumers can override the theme with a single `:root` block.
+   ========================================================================== */
+
+/* ─── Custom properties (theme tokens) ──────────────────────────────────── */
+
+:root {
+  /* Colors — primary */
+  --ug-color-primary:       #1565c0;
+  --ug-color-primary-dark:  #0d47a1;
+  --ug-color-primary-light: #e3f2fd;
+  --ug-color-primary-hover: #d0eaf9;
+
+  /* Colors — surface */
+  --ug-color-bg:            #ffffff;
+  --ug-color-bg-header:     #f5f5f5;
+  --ug-color-bg-panel:      #f0f2f5;
+  --ug-color-bg-group:      #eef2f8;
+  --ug-color-bg-detail:     #f8faff;
+  --ug-color-bg-pager:      #fafafa;
+  --ug-color-bg-hover:      #f5f9ff;
+
+  /* Colors — border */
+  --ug-color-border:        #d8d8d8;
+  --ug-color-border-light:  #e4e4e4;
+  --ug-color-border-cell:   #eeeeee;
+  --ug-color-border-header: #d0d0d0;
+  --ug-color-border-group:  #ccd6e8;
+  --ug-color-border-panel:  #dde1e8;
+
+  /* Colors — text */
+  --ug-color-text:          #333333;
+  --ug-color-text-header:   #444444;
+  --ug-color-text-group:    #1a3a6e;
+  --ug-color-text-muted:    #888888;
+  --ug-color-text-empty:    #777777;
+  --ug-color-text-sub:      #aaaaaa;
+  --ug-color-text-pager:    #555555;
+
+  /* Spacing */
+  --ug-spacing-xs:  0.25rem;
+  --ug-spacing-sm:  0.375rem;
+  --ug-spacing-md:  0.5rem;
+  --ug-spacing-lg:  0.75rem;
+  --ug-spacing-xl:  1rem;
+  --ug-spacing-2xl: 1.5rem;
+
+  /* Typography */
+  --ug-font-size-xs:   0.6875rem;  /* 11px */
+  --ug-font-size-sm:   0.75rem;    /* 12px */
+  --ug-font-size-base: 0.8125rem;  /* 13px */
+  --ug-font-size-th:   0.78125rem; /* 12.5px */
+
+  /* Border radius */
+  --ug-radius-sm:   2px;
+  --ug-radius-base: 4px;
+  --ug-radius-pill: 12px;
+
+  /* Shadows */
+  --ug-shadow-shell:   none;
+  --ug-shadow-menu:    none;
+  --ug-shadow-freeze:  none;
+
+  /* Transitions */
+  --ug-transition: 0.15s;
+}
+
+/* ─── Shell ──────────────────────────────────────────────────────────────── */
+
+.ug-shell {
+  /* Positioning */
+  position: relative;
+  /* overflow: hidden must NOT be set — it would become the sticky container
+     and break position:sticky on frozen columns inside .ug-viewport */
+
+  /* Box model */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+
+  /* Visual */
+  background: inherit;
+  border: 1px solid var(--ug-color-border);
+  border-radius: var(--ug-radius-base);
+  box-shadow: var(--ug-shadow-shell);
+}
+
+
+/* ─── Group panel ────────────────────────────────────────────────────────── */
+
+.ug-group-panel {
+  /* Box model */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--ug-spacing-md);
+  min-height: 34px;
+  padding: var(--ug-spacing-sm) var(--ug-spacing-lg);
+
+  /* Typography */
+  font-size: var(--ug-font-size-sm);
+  color: var(--ug-color-text-muted);
+
+  /* Visual */
+  background: var(--ug-color-bg-panel);
+  border-bottom: 1px solid var(--ug-color-border-panel);
+  transition: background var(--ug-transition);
+}
+
+.ug-group-panel.ug-drag-over {
+  background: var(--ug-color-primary-light);
+  color: var(--ug-color-primary);
+}
+
+.ug-group-chip {
+  /* Box model */
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px var(--ug-spacing-md);
+
+  /* Typography */
+  font-size: var(--ug-font-size-sm);
+  font-weight: 500;
+  color: var(--ug-color-bg);
+
+  /* Visual */
+  background: var(--ug-color-primary);
+  border-radius: var(--ug-radius-pill);
+}
+
+.ug-group-chip-x {
+  cursor: pointer;
+  opacity: 0.75;
+  font-size: 0.875rem;
+  line-height: 1;
+  padding: 0 1px;
+}
+
+.ug-group-chip-x:hover { opacity: 1; }
+
+.ug-group-chip-sort {
+  display: inline-block;
+  cursor: pointer;
+  margin-left: 4px;
+  font-size: 0.7rem;
+  opacity: 0.7;
+}
+.ug-group-chip-sort:hover { opacity: 1; }
+.ug-group-chip-sort-asc::after  { content: '▲'; }
+.ug-group-chip-sort-desc::after { content: '▼'; }
+
+/* ─── Viewport ───────────────────────────────────────────────────────────── */
+
+.ug-viewport {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+/* ─── Table base ─────────────────────────────────────────────────────────── */
+
+.ug-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+
+/* thead tr must NOT have position:sticky — if it does, it becomes the
+   containing block for child <th> cells, breaking their horizontal sticky. */
+.ug-table thead tr {
+  z-index: 10;
+}
+
+.ug-table th {
+  /* Each <th> is individually sticky so it can stick both vertically (top:0)
+     AND horizontally (left:Xpx for frozen cells) at the same time. */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+
+  /* Typography */
+  font-weight: 600;
+  font-size: var(--ug-font-size-th);
+  color: var(--ug-color-text-header);
+  white-space: nowrap;
+  user-select: none;
+
+  /* Visual */
+  background: var(--ug-color-bg-header);
+  border-bottom: 2px solid var(--ug-color-border-header);
+  border-right: 1px solid var(--ug-color-border-light);
+}
+
+.ug-th-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--ug-spacing-xs);
+  padding: var(--ug-spacing-lg) var(--ug-spacing-lg);
+  overflow: hidden;
+}
+
+.ug-th-center { justify-content: center; }
+.ug-th-right  { justify-content: flex-end; }
+
+.ug-th-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Sort arrows ────────────────────────────────────────────────────────── */
+
+.ug-sort-arrows {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.ug-sort-arrows span {
+  display: block;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+
+.ug-arr-up { border-bottom: 5px solid var(--ug-color-text); }
+.ug-arr-dn { border-top:    5px solid var(--ug-color-text); }
+
+.ug-sort-asc .ug-sort-arrows,
+.ug-sort-desc .ug-sort-arrows { opacity: 1; }
+
+.ug-sort-asc .ug-arr-dn,
+.ug-sort-desc .ug-arr-up { opacity: 0.2; }
+/* Sort priority badge (multi-column sort: 1, 2, 3…) */
+.ug-sort-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 2px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--ug-color-primary);
+  color: #fff;
+  flex-shrink: 0;
+  margin-left: 2px;
+}
+/* ─── Resize handle ──────────────────────────────────────────────────────── */
+
+.ug-resize-handle {
+  /* Positioning */
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 1;
+
+  /* Box model */
+  width: 4px;
+  height: 100%;
+
+  /* Visual */
+  cursor: col-resize;
+}
+
+.ug-resize-handle:hover { background: var(--ug-color-primary); }
+
+
+
+/* ─── Body rows ──────────────────────────────────────────────────────────── */
+
+/* Default row background - allows getRowStyle to override */
+.ug-table tbody tr {
+  background: var(--ug-color-bg);
+}
+
+.ug-table td {
+  /* Typography */
+  font-size: var(--ug-font-size-base);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  /* Box model */
+  padding: var(--ug-spacing-lg) var(--ug-spacing-lg);
+
+  /* Visual */
+  background: inherit;
+  border-bottom: 1px solid var(--ug-color-border-cell);
+  border-right: 1px solid var(--ug-color-border-light);
+}
+
+.ug-table tbody tr:hover td      { background: var(--ug-color-bg-hover); }
+
+/* ─── Keyboard navigation ───────────────────────────────────────────── */
+
+/* Suppress browser default focus ring on the viewport —
+   keyboard focus is shown via the active row/cell highlight instead */
+.ug-viewport:focus,
+.ug-viewport:focus-visible { outline: none; }
+
+/* Active (keyboard-navigated) row */
+.ug-table tbody .ug-row-active td {
+  background: var(--ug-color-bg-hover);
+}
+.ug-table tbody .ug-row-active .ug-frozen {
+  background: var(--ug-color-bg-hover);
+}
+
+/* Active cell within the active row */
+.ug-table tbody .ug-row-active .ug-cell-active {
+  outline: 2px solid var(--ug-color-primary);
+  outline-offset: -2px;
+}
+
+/* Active column header (keyboard header mode) */
+.ug-table thead th.ug-th-active {
+  outline: 2px solid var(--ug-color-primary);
+  outline-offset: -2px;
+  background: var(--ug-color-primary-light);
+}
+
+/* enableHover:false — disable row hover highlight */
+.ug-no-hover .ug-table tbody tr:hover td     { background: inherit; }
+.ug-no-hover .ug-table tbody tr:hover .ug-frozen { background: inherit; }
+
+/* allowTextWrap — cell text wraps to multiple lines */
+.ug-text-wrap .ug-table td {
+  white-space: normal;
+  word-break: break-word;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+/* rowHeight — custom row density; set via --ug-row-height CSS variable on .ug-shell */
+.ug-shell[style*='--ug-row-height'] .ug-table td {
+  padding-top: 0;
+  padding-bottom: 0;
+  height: var(--ug-row-height);
+  line-height: var(--ug-row-height);
+}
+
+/* ─── Frozen columns ─────────────────────────────────────────────────────── */
+
+.ug-frozen {
+  position: sticky;
+  z-index: 2;
+  background: inherit;
+}
+
+thead .ug-frozen {
+  /* Must be above regular header cells (z-index: 10) AND body frozen cells (z-index: 2) */
+  z-index: 20;
+  background: var(--ug-color-bg-header);
+}
+
+/* The last frozen column gets a slightly stronger border-right to mark the freeze boundary */
+.ug-frozen-last {
+  border-right: 2px solid var(--ug-color-border-header);
+}
+
+/* Explicit backgrounds prevent scroll-through bleed */
+.ug-table tbody tr .ug-frozen {
+  background: inherit;
+}
+.ug-table tbody tr:hover .ug-frozen {
+  background: var(--ug-color-bg-hover);
+}
+.ug-table tbody .ug-row-selected .ug-frozen {
+  background: var(--ug-color-primary-light);
+}
+.ug-table tbody .ug-row-selected:hover .ug-frozen {
+  background: var(--ug-color-primary-hover);
+}
+.ug-table tbody .ug-row-group .ug-frozen {
+  background: var(--ug-color-bg-group);
+}
+
+/* ─── Row selection ──────────────────────────────────────────────────────── */
+
+/* Higher specificity replaces !important */
+.ug-table tbody .ug-row-selected td             { background: var(--ug-color-primary-light); }
+.ug-table tbody .ug-row-selected:hover td        { background: var(--ug-color-primary-hover); }
+.ug-table tbody .ug-row-selected .ug-frozen      { background: var(--ug-color-primary-light); }
+.ug-table tbody .ug-row-selected:hover .ug-frozen{ background: var(--ug-color-primary-hover); }
+
+/* ─── Group rows ─────────────────────────────────────────────────────────── */
+
+.ug-table tbody .ug-row-group td {
+  /* Typography */
+  font-weight: 600;
+  font-size: var(--ug-font-size-th);
+  color: var(--ug-color-text-group);
+
+  /* Visual */
+  background: var(--ug-color-bg-group);
+  border-bottom: 1px solid var(--ug-color-border-group);
+}
+
+.ug-table tbody .ug-row-group .ug-frozen { background: var(--ug-color-bg-group); }
+
+.ug-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ug-spacing-md);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* CSS triangle — no image, no font icon */
+.ug-group-arrow {
+  display: inline-block;
+  width: 0;
+  height: 0;
+  flex-shrink: 0;
+  border-top:    5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left:   7px solid var(--ug-color-primary);
+  transition: transform var(--ug-transition);
+}
+
+.ug-group-arrow.open { transform: rotate(90deg); }
+
+/* ─── Detail / master-detail row ─────────────────────────────────────────── */
+
+.ug-table tbody .ug-row-detail td {
+  padding: 0;
+  background: var(--ug-color-bg-detail);
+  border-bottom: 1px solid var(--ug-color-border-group);
+}
+
+.ug-detail-inner {
+  padding: var(--ug-spacing-xl) var(--ug-spacing-2xl);
+}
+
+.ug-expand-btn {
+  /* Box model */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-right: var(--ug-spacing-md);
+
+  /* Typography */
+  font-size: var(--ug-font-size-xs);
+  font-weight: 700;
+  line-height: 1;
+  color: #666;
+
+  /* Visual */
+  background: inherit;
+  border: 1px solid #bbb;
+  border-radius: var(--ug-radius-sm);
+  cursor: pointer;
+}
+
+.ug-expand-btn.open {
+  background: var(--ug-color-primary-light);
+  border-color: var(--ug-color-primary);
+  color: var(--ug-color-primary);
+}
+
+/* ─── Empty state ────────────────────────────────────────────────────────── */
+
+.ug-row-empty td {
+  padding: 0;
+  border-bottom: none;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.ug-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ug-spacing-md);
+  padding: 3.25rem var(--ug-spacing-2xl);
+}
+
+.ug-empty-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--ug-color-text-empty);
+}
+
+.ug-empty-sub {
+  font-size: var(--ug-font-size-base);
+  color: var(--ug-color-text-sub);
+}
+
+/* ─── Cell utilities ─────────────────────────────────────────────────────── */
+
+.ug-cell-expand { display: flex; align-items: center; }
+
+.ug-cell-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  min-height: 20px;
+}
+
+/* When ug-cell-check sits inside a th-inner, let it expand so the
+   checkbox centres in the full column width (same as all other headers) */
+.ug-th-inner .ug-cell-check {
+  flex: 1;
+}
+
+.ug-cell-check input[type="checkbox"] {
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  cursor: pointer;
+  accent-color: var(--ug-color-primary);
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+  visibility: visible !important;
+}
+
+/* Body row checkboxes - transparent wrapper background */
+td .ug-cell-check {
+  background-color: transparent !important;
+}
+
+td .ug-cell-check input[type="checkbox"] {
+  position: relative !important;
+  opacity: 1 !important;
+  z-index: 1 !important;
+}
+
+.ug-text-right  { text-align: right; }
+.ug-text-center { text-align: center; }
+.ug-text-justify{ text-align: justify; }
+.muted          { color: var(--ug-color-text-muted); font-weight: 400; }
+
+/* ─── Pager ──────────────────────────────────────────────────────────────── */
+
+.ug-pager {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--ug-spacing-md);
+  padding: var(--ug-spacing-md) var(--ug-spacing-lg);
+  border-top: 1px solid var(--ug-color-border-cell);
+  background: var(--ug-color-bg-pager);
+  font-size: var(--ug-font-size-base);
+  color: var(--ug-color-text-pager);
+}
+
+.ug-pager-info  { flex: 1; white-space: nowrap; }
+
+.ug-pager-sizes {
+  display: flex;
+  align-items: center;
+  gap: var(--ug-spacing-md);
+  white-space: nowrap;
+}
+
+.ug-pager-sizes select {
+  padding: 3px var(--ug-spacing-md);
+  font-size: var(--ug-font-size-base);
+  background: inherit;
+  border: 1px solid #c8c8c8;
+  border-radius: var(--ug-radius-sm);
+}
+
+.ug-pager-pages {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.ug-page-btn {
+  /* Box model */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 var(--ug-spacing-xs);
+
+  /* Typography */
+  font-size: var(--ug-font-size-base);
+  line-height: 1;
+  color: #444;
+
+  /* Visual */
+  background: inherit;
+  border: 1px solid #d0d0d0;
+  border-radius: var(--ug-radius-sm);
+  cursor: pointer;
+}
+
+.ug-page-btn:hover    { background: #f0f0f0; }
+
+.ug-page-btn.active {
+  background: var(--ug-color-primary);
+  border-color: var(--ug-color-primary);
+  color: var(--ug-color-bg);
+  font-weight: 600;
+}
+
+.ug-page-btn.disabled {
+  opacity: 0.35;
+  cursor: default;
+  pointer-events: none;
+}
+
+.ug-page-ellipsis {
+  padding: 0 var(--ug-spacing-xs);
+  color: #bbb;
+}
+
+/* ─── Context menu ───────────────────────────────────────────────────────── */
+
+.ug-ctx-menu {
+  /* Positioning */
+  position: fixed;
+  z-index: 9999;
+
+  /* Box model */
+  min-width: 160px;
+  padding: var(--ug-spacing-xs) 0;
+
+  /* Visual */
+  background: inherit;
+  border: 1px solid #d0d0d0;
+  border-radius: var(--ug-radius-base);
+  box-shadow: var(--ug-shadow-menu);
+}
+
+.ug-ctx-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ug-spacing-md);
+  padding: var(--ug-spacing-md) var(--ug-spacing-xl);
+  font-size: var(--ug-font-size-base);
+  color: var(--ug-color-text);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ug-ctx-icon { font-size: 0.875rem; flex-shrink: 0; width: 14px; text-align: center; }
+
+.ug-ctx-item:hover { background: #f0f4ff; }
+
+.ug-ctx-divider {
+  height: 1px;
+  margin: var(--ug-spacing-xs) 0;
+  background: #eee;
+}
+
+/* ─── Loading indicator ──────────────────────────────────────────────────── */
+
+.ug-loading-overlay {
+  /* Cover the entire grid shell */
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+
+  /* Centre the spinner */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Semi-transparent white wash */
+  background: rgba(255, 255, 255, 0.75);
+  border-radius: var(--ug-radius-base);
+}
+
+.ug-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--ug-color-border);
+  border-top-color: var(--ug-color-primary);
+  border-radius: 50%;
+  animation: ug-spin 0.65s linear infinite;
+}
+
+@keyframes ug-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ─── Adaptive — card (vertical) layout ─────────────────────────────────── */
+
+/* Hide standard header in vertical mode — labels live inside each card */
+.ug-adaptive-vertical .ug-table thead { display: none; }
+
+/* Cards take full available width */
+.ug-adaptive-vertical .ug-table,
+.ug-adaptive-vertical .ug-table tbody,
+.ug-adaptive-vertical .ug-vertical-row,
+.ug-adaptive-vertical .ug-vertical-row td {
+  display: block;
+  width: 100%;
+}
+
+.ug-adaptive-vertical .ug-vertical-row {
+  border-bottom: 2px solid var(--ug-color-border);
+}
+
+/* Selected card */
+.ug-adaptive-vertical .ug-row-selected .ug-card { background: var(--ug-color-primary-light); }
+
+.ug-card {
+  width: 100%;
+  padding: var(--ug-spacing-xs) 0;
+}
+
+.ug-card-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ug-spacing-lg);
+  padding: var(--ug-spacing-sm) var(--ug-spacing-lg);
+  border-bottom: 1px solid var(--ug-color-border-cell);
+}
+
+.ug-card-row:last-child { border-bottom: none; }
+
+.ug-card-label {
+  flex: 0 0 38%;
+  font-weight: 600;
+  font-size: var(--ug-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ug-color-text-muted);
+  padding-top: 1px;
+}
+
+.ug-card-value {
+  flex: 1;
+  font-size: var(--ug-font-size-base);
+  color: var(--ug-color-text);
+  word-break: break-word;
+  white-space: normal;
+}
+
+/* ─── Adaptive — general mobile polish ──────────────────────────────────── */
+
+.ug-adaptive .ug-group-panel { display: none; }
+
+/* Pager: stack vertically on very narrow screens */
+@media (max-width: 480px) {
+  .ug-pager {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .ug-pager-info { width: 100%; }
+}
+
+/* Auto-activate vertical mode via CSS media query when enableAdaptiveUI
+   and AdaptiveUIMode = 'Mobile'. JS toggles .ug-adaptive-vertical, but
+   on resize CSS ensures the viewport handles overflow gracefully. */
+@media (max-width: 767px) {
+  .ug-adaptive .ug-viewport {
+    -webkit-overflow-scrolling: touch;
+  }
+}

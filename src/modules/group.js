@@ -180,10 +180,6 @@ const GroupModule = {
     const span = totalCols;
     const td = el('td', { colSpan: String(span) });
 
-    // If frozen columns exist, wrap group content in a sticky div so it stays visible on h-scroll.
-    const hasFrozen = !!(grid._frozenFieldSet && grid._frozenFieldSet.size > 0) ||
-      cols.some((c) => c.isFrozen || c.lockColumn || c.freeze === 'Left' || c.freeze === 'Fixed');
-
     // Indent nested levels
     const paddingLeft = (depth * 24 + 12) + 'px';
 
