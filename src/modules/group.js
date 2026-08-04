@@ -206,9 +206,15 @@ const GroupModule = {
 
     if (hasFrozen) {
       td.style.padding = '0';
+      td.style.overflow = 'visible';
       const stickyWrap = el('div', {
         className: 'ug-group-sticky-wrap',
-        style: { position: 'sticky', left: '0', paddingLeft: paddingLeft, display: 'inline-block' },
+        style: {
+          position: 'sticky',
+          left: '0',
+          paddingLeft: paddingLeft,
+          width: 'max-content',
+        },
       });
       stickyWrap.appendChild(toggle);
       td.appendChild(stickyWrap);
