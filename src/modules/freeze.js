@@ -12,10 +12,10 @@ const FreezeModule = {
       grid._frozenFieldSet = new Set();
       const cols = grid._columns || grid._opts.columns || [];
       let count = 0;
-      for (const col of cols) {
-        if (count >= fc) break;
+      for (let i = 0; i < cols.length && count < fc; i++) {
+        const col = cols[i];
         if (!col.isFrozen && !col.lockColumn) {
-          grid._frozenFieldSet.add(col.field || String(col._idx));
+          grid._frozenFieldSet.add(col.field || String(i));
           count++;
         }
       }
@@ -57,7 +57,13 @@ const FreezeModule = {
   _isFrozen(grid, col, colIndex) {
     if (col.isFrozen || col.lockColumn)          return true;
     if (col.freeze === 'Left' || col.freeze === 'Fixed') return true;
-    if (grid._frozenFieldSet && grid._frozenFieldSet.has(col.field || String(col._idx))) return true;
+    // Field-set check (survives grouping — grouped columns are removed from visible list).
+    if (grid._frozenFieldSet && grid._frozenFieldSet.size > 0) {
+      return grid._frozenFieldSet.has(col.field || String(colIndex));
+    }
+    // Fallback: index-based check.
+    const fc = parseInt(grid._opts.frozenColumns, 10);
+    if (!isNaN(fc) && fc > 0 && colIndex < fc) return true;
     return false;
   },
   _computeOffsets(grid) {
