@@ -287,6 +287,9 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     if (props.frozenColumns === prevFrozenCols.current) return;
     prevFrozenCols.current = props.frozenColumns;
     gridRef.current._opts.frozenColumns = props.frozenColumns;
+    // Re-create _frozenFieldSet for the new count.
+    const freezeMod = gridRef.current._modules.find(m => m.name === 'Freeze');
+    if (freezeMod && freezeMod.init) freezeMod.init(gridRef.current);
     unmountRoots(templateRoots);
     gridRef.current.render();
   }, [props.frozenColumns]);
