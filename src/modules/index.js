@@ -14,3 +14,4 @@ export { ContextMenuModule }  from './contextMenu.js';
 export { ExcelExportModule }  from './excelExport.js';
 export { AdaptiveModule }     from './adaptive.js';
 export { KeyboardModule }     from './keyboard.js';
+export { VirtualModule }      from './virtual.js';

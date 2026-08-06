@@ -687,6 +687,9 @@ class UniversalGrid {
     let items = data.map((d, i) => ({ type: 'row', data: d, index: i }));
     items = this._callHook('buildRenderItems', items);
 
+    // Virtual scroll: slice to visible range only
+    items = this._callHook('sliceVirtual', items);
+
     if (items.length === 0) {
       const tdEmpty = el('td', { colSpan: String(totalCols) });
 
@@ -844,6 +847,12 @@ class UniversalGrid {
     });
 
     this._tbody.appendChild(fragment);
+
+    // Virtual scroll: add spacer rows for correct scrollbar
+    this._callHook('afterBodyRender');
+
+    // Notify React wrapper that render completed (for portal flush)
+    if (this._opts.onRenderComplete) this._opts.onRenderComplete();
   }
   /* ─── Vertical (card) row rendering ──────────────────────────────────────── */
 

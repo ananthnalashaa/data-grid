@@ -22,14 +22,14 @@ import { UniversalGrid } from '../UniversalGrid.js';
 import {
   FreezeModule, SortModule, PageModule, SelectionModule,
   ResizeModule, ReorderModule, GroupModule, DetailRowModule,
-  ContextMenuModule, ExcelExportModule, KeyboardModule,
+  ContextMenuModule, ExcelExportModule, KeyboardModule, VirtualModule,
 } from '../modules/index.js';
 
 // ─── All built-in modules ────────────────────────────────────────
 const ALL_MODULES = [
   FreezeModule, SortModule, PageModule, SelectionModule,
   ResizeModule, ReorderModule, GroupModule, DetailRowModule,
-  ContextMenuModule, ExcelExportModule, KeyboardModule,
+  ContextMenuModule, ExcelExportModule, KeyboardModule, VirtualModule,
 ];
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -177,6 +177,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
       allowSelection:  props.allowSelection !== false,
       allowPaging:     props.allowPaging,
       enableHover:     props.enableHover !== false,
+      enableVirtualization: props.enableVirtualization,
       // Settings
       selectionSettings: props.selectionSettings,
       pageSettings:      props.pageSettings,
@@ -224,6 +225,13 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
       recordClick:       (...a) => cbRef.current.recordClick?.(...a),
       contextMenuClick:  (...a) => cbRef.current.contextMenuClick?.(...a),
       dataStateChange:   (...a) => cbRef.current.dataStateChange?.(...a),
+      onRenderComplete:  () => {
+        if (portalsRef.current.length > 0) flushPortals();
+      },
+      onBeforeRender: () => {
+        clearPortals(portalsRef);
+        portalEntriesRef.current = [];
+      },
     };
   }
 
