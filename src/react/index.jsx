@@ -259,9 +259,9 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── dataSource changes (value-compare to survive StrictMode double-fire) ──
+  // ── dataSource changes ──────────────────────────────────────────────────────
   const prevDataSource = useRef(props.dataSource);
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!gridRef.current) return;
     if (props.dataSource === prevDataSource.current) return;
     prevDataSource.current = props.dataSource;
@@ -271,7 +271,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   }, [props.dataSource]);
 
   // ── Column changes (fingerprint-compare) ────────────────────────────
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!gridRef.current) return;
     if (colFingerprint === prevFingerprint.current) return;
     prevFingerprint.current = colFingerprint;
@@ -288,7 +288,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
 
   // ── frozenColumns changes (value-compare to survive StrictMode double-fire) ──
   const prevFrozenCols = useRef(props.frozenColumns);
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (!gridRef.current) return;
     if (props.frozenColumns === prevFrozenCols.current) return;
     prevFrozenCols.current = props.frozenColumns;
