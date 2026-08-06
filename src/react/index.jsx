@@ -91,12 +91,6 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   const portalEntriesRef = useRef([]);
   const [, forceRender] = useState(0);
 
-  // Debug: log render with portal count
-  if (portalEntriesRef.current.length > 0) {
-    console.timeEnd('[grid] flushPortals→rerender');
-    console.log('[grid] render with', portalEntriesRef.current.length, 'portals');
-  }
-
   // ── Stable callback forwarding ──────────────────────────────────────
   // Store latest callbacks in a ref so the grid always calls the newest
   // version without needing to rebuild the grid instance on every render.
@@ -240,28 +234,21 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     const entries = portalsRef.current;
     portalsRef.current = [];
     portalEntriesRef.current = entries;
-    console.time('[grid] flushPortals→rerender');
     if (entries.length > 0) forceRender(v => v + 1);
-    else console.timeEnd('[grid] flushPortals→rerender');
   }
 
   // ── Mount grid once (layoutEffect = before browser paint) ─────────
   const mountedRef = useRef(false);
   useLayoutEffect(() => {
     if (!containerRef.current) return;
-    console.time('[grid] mount total');
 
     const opts = buildOpts();
     const origDataBound = opts.dataBound;
     opts.dataBound = () => {};
-    console.time('[grid] UniversalGrid constructor');
     gridRef.current = new UniversalGrid(containerRef.current, opts);
-    console.timeEnd('[grid] UniversalGrid constructor');
     gridRef.current._opts.dataBound = origDataBound;
     mountedRef.current = true;
-    console.log('[grid] portals collected:', portalsRef.current.length);
     flushPortals();
-    console.timeEnd('[grid] mount total');
     requestAnimationFrame(() => origDataBound?.());
     return () => {
       mountedRef.current = false;
@@ -274,20 +261,17 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
 
   // ── dataSource changes (value-compare to survive StrictMode double-fire) ──
   const prevDataSource = useRef(props.dataSource);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!gridRef.current) return;
     if (props.dataSource === prevDataSource.current) return;
     prevDataSource.current = props.dataSource;
-    console.time('[grid] setDataSource');
     clearPortals(portalsRef);
     gridRef.current.setDataSource(props.dataSource || []);
-    console.timeEnd('[grid] setDataSource');
-    console.log('[grid] portals after setDataSource:', portalsRef.current.length);
     flushPortals();
   }, [props.dataSource]);
 
   // ── Column changes (fingerprint-compare) ────────────────────────────
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!gridRef.current) return;
     if (colFingerprint === prevFingerprint.current) return;
     prevFingerprint.current = colFingerprint;
@@ -304,12 +288,11 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
 
   // ── frozenColumns changes (value-compare to survive StrictMode double-fire) ──
   const prevFrozenCols = useRef(props.frozenColumns);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!gridRef.current) return;
     if (props.frozenColumns === prevFrozenCols.current) return;
     prevFrozenCols.current = props.frozenColumns;
     gridRef.current._opts.frozenColumns = props.frozenColumns;
-    // Re-create _frozenFieldSet for the new count.
     const freezeMod = gridRef.current._modules.find(m => m.name === 'Freeze');
     if (freezeMod && freezeMod.init) freezeMod.init(gridRef.current);
     clearPortals(portalsRef);
