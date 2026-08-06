@@ -256,7 +256,6 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     gridRef.current = new UniversalGrid(containerRef.current, opts);
     gridRef.current._opts.dataBound = origDataBound;
     mountedRef.current = true;
-    flushPortals();
     requestAnimationFrame(() => origDataBound?.());
     return () => {
       mountedRef.current = false;
@@ -274,8 +273,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     if (props.dataSource === prevDataSource.current) return;
     prevDataSource.current = props.dataSource;
     clearPortals(portalsRef);
+    portalEntriesRef.current = [];
     gridRef.current.setDataSource(props.dataSource || []);
-    flushPortals();
   }, [props.dataSource]);
 
   // ── Column changes (fingerprint-compare) ────────────────────────────
@@ -284,8 +283,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     if (colFingerprint === prevFingerprint.current) return;
     prevFingerprint.current = colFingerprint;
     clearPortals(portalsRef);
+    portalEntriesRef.current = [];
     gridRef.current.setColumns(columns);
-    flushPortals();
   }, [columns, colFingerprint]);
 
   // ── contextMenuItems changes ─────────────────────────────────────────
@@ -302,8 +301,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     // Re-render empty state if grid currently has no rows
     if (!props.dataSource || props.dataSource.length === 0) {
       clearPortals(portalsRef);
+      portalEntriesRef.current = [];
       gridRef.current.setDataSource(props.dataSource || []);
-      flushPortals();
     }
   }, [emptyTpl]);
 
@@ -317,8 +316,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     const freezeMod = gridRef.current._modules.find(m => m.name === 'Freeze');
     if (freezeMod && freezeMod.init) freezeMod.init(gridRef.current);
     clearPortals(portalsRef);
+    portalEntriesRef.current = [];
     gridRef.current.render();
-    flushPortals();
   }, [props.frozenColumns]);
 
   // ── Imperative ref methods ───────────────────────────────────────────
