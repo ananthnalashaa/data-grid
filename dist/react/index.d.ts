@@ -90,6 +90,7 @@ export interface GridComponentProps {
   allowTextWrap?:    boolean;
   enableHover?:      boolean;
   enableHeaderFocus?: boolean;
+  enableVirtualization?: boolean;
 
   // Settings
   selectionSettings?: SelectionSettings;
