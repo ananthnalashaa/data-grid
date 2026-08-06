@@ -286,6 +286,19 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     gridRef.current._opts.contextMenuItems = props.contextMenuItems;
   }, [props.contextMenuItems]);
 
+  // ── emptyTemplate changes ────────────────────────────────────────────
+  const emptyTpl = props.emptyTemplate || props.emptyRecordTemplate;
+  useEffect(() => {
+    if (!gridRef.current) return;
+    gridRef.current._opts.emptyTemplate = emptyTpl;
+    // Re-render empty state if grid currently has no rows
+    if (!props.dataSource || props.dataSource.length === 0) {
+      clearPortals(portalsRef);
+      gridRef.current.setDataSource(props.dataSource || []);
+      flushPortals();
+    }
+  }, [emptyTpl]);
+
   // ── frozenColumns changes (value-compare to survive StrictMode double-fire) ──
   const prevFrozenCols = useRef(props.frozenColumns);
   useEffect(() => {
