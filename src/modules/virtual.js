@@ -19,7 +19,7 @@ const VirtualModule = {
 
   afterMount(grid) {
     if (!grid._virtual) return;
-    const viewport = grid._el.querySelector('.ug-viewport');
+    const viewport = grid._viewport;
     if (!viewport) return;
     grid._virtual._viewport = viewport;
     viewport.addEventListener('scroll', () => VirtualModule._onScroll(grid));
