@@ -14,10 +14,10 @@
 
 import React, {
   useEffect, useLayoutEffect, useRef, useImperativeHandle,
-  forwardRef, useMemo, Children, useState, useCallback,
+  forwardRef, useMemo, Children,
 } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createPortal, flushSync } from 'react-dom';
+import { createPortal } from 'react-dom';
 
 import { UniversalGrid } from '../UniversalGrid.js';
 import {
@@ -89,7 +89,9 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   const containerRef  = useRef(null);
   const gridRef       = useRef(null);
   const portalsRef    = useRef([]);
-  const [portalEntries, setPortalEntries] = useState([]);
+  // A dedicated React root for rendering all JSX template portals at once.
+  const portalRootRef = useRef(null);
+  const portalHostRef = useRef(null);
 
   // ── Stable callback forwarding ──────────────────────────────────────
   // Store latest callbacks in a ref so the grid always calls the newest
@@ -228,20 +230,33 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   }
 
   // Flush collected portals into React state after the grid renders DOM synchronously.
-  const flushPortals = useCallback(() => {
+  // Flush collected portals by rendering them all in the dedicated root.
+  function flushPortals() {
     const entries = portalsRef.current;
     portalsRef.current = [];
+    if (!portalRootRef.current) return;
     if (entries.length > 0) {
-      flushSync(() => setPortalEntries([...entries]));
+      portalRootRef.current.render(
+        React.createElement(React.Fragment, null,
+          ...entries.map((e, i) => createPortal(e.element, e.container, String(i)))
+        )
+      );
     } else {
-      flushSync(() => setPortalEntries([]));
+      portalRootRef.current.render(null);
     }
-  }, []);
+  }
 
   // ── Mount grid once (layoutEffect = before browser paint) ─────────
   const mountedRef = useRef(false);
   useLayoutEffect(() => {
     if (!containerRef.current) return;
+    // Create a hidden host element for the portal root (lives outside the grid DOM).
+    const host = document.createElement('div');
+    host.style.cssText = 'display:contents';
+    containerRef.current.appendChild(host);
+    portalHostRef.current = host;
+    portalRootRef.current = createRoot(host);
+
     const opts = buildOpts();
     const origDataBound = opts.dataBound;
     opts.dataBound = () => {};
@@ -253,7 +268,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     return () => {
       mountedRef.current = false;
       clearPortals(portalsRef);
-      setPortalEntries([]);
+      portalRootRef.current?.unmount();
+      portalRootRef.current = null;
       gridRef.current?.destroy();
       gridRef.current = null;
     };
@@ -268,7 +284,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     clearPortals(portalsRef);
     gridRef.current.setDataSource(props.dataSource || []);
     flushPortals();
-  }, [props.dataSource, flushPortals]);
+  }, [props.dataSource]);
 
   // ── Column changes (fingerprint-compare) ────────────────────────────
   useEffect(() => {
@@ -278,7 +294,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     clearPortals(portalsRef);
     gridRef.current.setColumns(columns);
     flushPortals();
-  }, [columns, colFingerprint, flushPortals]);
+  }, [columns, colFingerprint]);
 
   // ── contextMenuItems changes ─────────────────────────────────────────
   useEffect(() => {
@@ -299,7 +315,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     clearPortals(portalsRef);
     gridRef.current.render();
     flushPortals();
-  }, [props.frozenColumns, flushPortals]);
+  }, [props.frozenColumns]);
 
   // ── Imperative ref methods ───────────────────────────────────────────
   useImperativeHandle(ref, () => {
@@ -358,13 +374,10 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   }, []);
 
   return (
-    <>
-      <div
-        ref={containerRef}
-        style={props.width ? { width: props.width } : undefined}
-      />
-      {portalEntries.map((entry, i) => createPortal(entry.element, entry.container, String(i)))}
-    </>
+    <div
+      ref={containerRef}
+      style={props.width ? { width: props.width } : undefined}
+    />
   );
 });
 
