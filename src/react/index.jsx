@@ -14,9 +14,8 @@
 
 import React, {
   useEffect, useLayoutEffect, useRef, useImperativeHandle,
-  forwardRef, useMemo, Children,
+  forwardRef, useMemo, Children, useState,
 } from 'react';
-import { createRoot } from 'react-dom/client';
 import { createPortal } from 'react-dom';
 
 import { UniversalGrid } from '../UniversalGrid.js';
@@ -89,9 +88,8 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   const containerRef  = useRef(null);
   const gridRef       = useRef(null);
   const portalsRef    = useRef([]);
-  // A dedicated React root for rendering all JSX template portals at once.
-  const portalRootRef = useRef(null);
-  const portalHostRef = useRef(null);
+  const portalEntriesRef = useRef([]);
+  const [, forceRender] = useState(0);
 
   // ── Stable callback forwarding ──────────────────────────────────────
   // Store latest callbacks in a ref so the grid always calls the newest
@@ -230,32 +228,19 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   }
 
   // Flush collected portals into React state after the grid renders DOM synchronously.
-  // Flush collected portals by rendering them all in the dedicated root.
+  // Flush collected portals into the component tree.
+  // setState inside useLayoutEffect triggers a synchronous re-render before paint.
   function flushPortals() {
     const entries = portalsRef.current;
     portalsRef.current = [];
-    if (!portalRootRef.current) return;
-    if (entries.length > 0) {
-      portalRootRef.current.render(
-        React.createElement(React.Fragment, null,
-          ...entries.map((e, i) => createPortal(e.element, e.container, String(i)))
-        )
-      );
-    } else {
-      portalRootRef.current.render(null);
-    }
+    portalEntriesRef.current = entries;
+    if (entries.length > 0) forceRender(v => v + 1);
   }
 
   // ── Mount grid once (layoutEffect = before browser paint) ─────────
   const mountedRef = useRef(false);
   useLayoutEffect(() => {
     if (!containerRef.current) return;
-    // Create a hidden host element for the portal root (lives outside the grid DOM).
-    const host = document.createElement('div');
-    host.style.cssText = 'display:contents';
-    containerRef.current.appendChild(host);
-    portalHostRef.current = host;
-    portalRootRef.current = createRoot(host);
 
     const opts = buildOpts();
     const origDataBound = opts.dataBound;
@@ -268,8 +253,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     return () => {
       mountedRef.current = false;
       clearPortals(portalsRef);
-      portalRootRef.current?.unmount();
-      portalRootRef.current = null;
+      portalEntriesRef.current = [];
       gridRef.current?.destroy();
       gridRef.current = null;
     };
@@ -374,10 +358,15 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      style={props.width ? { width: props.width } : undefined}
-    />
+    <>
+      <div
+        ref={containerRef}
+        style={props.width ? { width: props.width } : undefined}
+      />
+      {portalEntriesRef.current.map((e, i) =>
+        createPortal(e.element, e.container, String(i))
+      )}
+    </>
   );
 });
 
