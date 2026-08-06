@@ -17,7 +17,7 @@ import React, {
   forwardRef, useMemo, Children, useState, useCallback,
 } from 'react';
 import { createRoot } from 'react-dom/client';
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 
 import { UniversalGrid } from '../UniversalGrid.js';
 import {
@@ -230,11 +230,11 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   // Flush collected portals into React state after the grid renders DOM synchronously.
   const flushPortals = useCallback(() => {
     const entries = portalsRef.current;
+    portalsRef.current = [];
     if (entries.length > 0) {
-      setPortalEntries([...entries]);
-      portalsRef.current = [];
+      flushSync(() => setPortalEntries([...entries]));
     } else {
-      setPortalEntries([]);
+      flushSync(() => setPortalEntries([]));
     }
   }, []);
 
