@@ -261,7 +261,7 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
 
   // ── dataSource changes ──────────────────────────────────────────────────────
   const prevDataSource = useRef(props.dataSource);
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!gridRef.current) return;
     if (props.dataSource === prevDataSource.current) return;
     prevDataSource.current = props.dataSource;
