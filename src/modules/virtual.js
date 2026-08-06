@@ -29,7 +29,7 @@ const VirtualModule = {
   sliceVirtual(grid, items) {
     if (!grid._virtual) return items;
     const vp = grid._virtual._viewport;
-    if (!vp) return items;
+    if (!vp || vp.clientHeight === 0) return items; // not laid out yet — render all
 
     const { rowHeight, buffer } = grid._virtual;
     const scrollTop = vp.scrollTop;
