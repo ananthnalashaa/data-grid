@@ -91,6 +91,12 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
   const portalEntriesRef = useRef([]);
   const [, forceRender] = useState(0);
 
+  // Debug: log render with portal count
+  if (portalEntriesRef.current.length > 0) {
+    console.timeEnd('[grid] flushPortals→rerender');
+    console.log('[grid] render with', portalEntriesRef.current.length, 'portals');
+  }
+
   // ── Stable callback forwarding ──────────────────────────────────────
   // Store latest callbacks in a ref so the grid always calls the newest
   // version without needing to rebuild the grid instance on every render.
@@ -234,21 +240,28 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     const entries = portalsRef.current;
     portalsRef.current = [];
     portalEntriesRef.current = entries;
+    console.time('[grid] flushPortals→rerender');
     if (entries.length > 0) forceRender(v => v + 1);
+    else console.timeEnd('[grid] flushPortals→rerender');
   }
 
   // ── Mount grid once (layoutEffect = before browser paint) ─────────
   const mountedRef = useRef(false);
   useLayoutEffect(() => {
     if (!containerRef.current) return;
+    console.time('[grid] mount total');
 
     const opts = buildOpts();
     const origDataBound = opts.dataBound;
     opts.dataBound = () => {};
+    console.time('[grid] UniversalGrid constructor');
     gridRef.current = new UniversalGrid(containerRef.current, opts);
+    console.timeEnd('[grid] UniversalGrid constructor');
     gridRef.current._opts.dataBound = origDataBound;
     mountedRef.current = true;
+    console.log('[grid] portals collected:', portalsRef.current.length);
     flushPortals();
+    console.timeEnd('[grid] mount total');
     requestAnimationFrame(() => origDataBound?.());
     return () => {
       mountedRef.current = false;
@@ -265,8 +278,11 @@ export const GridComponent = forwardRef(function GridComponent(props, ref) {
     if (!gridRef.current) return;
     if (props.dataSource === prevDataSource.current) return;
     prevDataSource.current = props.dataSource;
+    console.time('[grid] setDataSource');
     clearPortals(portalsRef);
     gridRef.current.setDataSource(props.dataSource || []);
+    console.timeEnd('[grid] setDataSource');
+    console.log('[grid] portals after setDataSource:', portalsRef.current.length);
     flushPortals();
   }, [props.dataSource]);
 
